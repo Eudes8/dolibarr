@@ -34,5 +34,5 @@
     }
   },
   "postCreateCommand": "echo '✅ PayrollCI dev environment ready!' && echo '🌐 Dolibarr: http://localhost:8080 (admin/admin)' && echo '🗄️ phpMyAdmin: http://localhost:8081' && echo '📁 Module: /var/www/html/custom/payrollci'",
-  "remoteUser": "www-data"
+  "remoteUser": "root"
 }
