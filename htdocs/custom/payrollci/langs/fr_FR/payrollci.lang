@@ -1,92 +1,98 @@
-Module500000Name = PayrollCI
-Module500000Desc = Gestion complète de la paie - Droit ivoirien 2026 (v3)
+# PayrollCI v4 - Traductions françaises
+# Réforme ITS 2024 - IBS/RICF
 
-# Menu
+# Module
+Module500100Name = PayrollCI
+Module500100Desc = Module de paie Côte d'Ivoire - Réforme ITS 2024
+
+# Général
 PayrollCI = Paie CI
-PayrollCIMenu = Bulletins de paie
-PayrollCISetup = Configuration PayrollCI
-PayrollCIAbout = À propos de PayrollCI
-BulletinsDePaie = Bulletins de paie
-
-# Navigation
-Fiche = Fiche
+PayrollCIArea = Espace Paie CI
+PayslipSingular = Bulletin de paie
+PayslipPlural = Bulletins de paie
+NewPayslip = Nouveau bulletin de paie
 BackToList = Retour à la liste
 
-# Champs employé
+# Employé
 Employee = Employé
 EmployeeName = Nom de l'employé
+EmployeeJob = Poste / Fonction
+Matricule = Matricule
+NumeroCNPS = N° CNPS
+NumeroCMU = N° CMU/CNAM
+DateEmbauche = Date d'embauche
+Anciennete = Ancienneté
+AncienneteMois = Ancienneté (mois)
+IsExpatrie = Salarié expatrié
+SituationFamiliale = Situation familiale
+NombreEnfants = Enfants à charge
+NombreParts = Nombre de parts
 
-# Salaire de base
-SalaireBase = Salaire catégoriel (base)
+# Période
+Periode = Période
+Mois = Mois
+Annee = Année
+SecteurActivite = Secteur d'activité
+Ville = Ville
+
+# Salaire
+SalaireBase = Salaire catégoriel
 Sursalaire = Sursalaire
+SalaireBrut = Salaire brut
+BrutImposable = Brut imposable
+SalaireNet = Salaire net
+NetAPayer = Net à payer
+CoutEmployeur = Coût total employeur
 
-# Primes CCI
+# Primes
 PrimeAnciennete = Prime d'ancienneté
 PrimeRendement = Prime de rendement
 PrimeTechnicite = Prime de technicité
 PrimeFonction = Prime de fonction
 PrimeResponsabilite = Prime de responsabilité
-PrimeRisque = Prime de risque/danger
+PrimeRisque = Prime de risque
 PrimeOutillage = Prime d'outillage
 PrimeSalissure = Prime de salissure
 PrimeCaisse = Prime de caisse
-PrimeAssiduite = Prime d'assiduité/ponctualité
-PrimePanier = Prime de panier (repas nuit)
+PrimeAssiduite = Prime d'assiduité
+PrimePanier = Prime de panier
 Gratification = Gratification / 13ème mois
 
 # Indemnités
 IndemniteTransport = Indemnité de transport
-TransportNonImposable = Transport non imposable
 IndemniteLogement = Indemnité de logement
 IndemniteRepresentation = Indemnité de représentation
 IndemniteExpatriation = Indemnité d'expatriation
 IndemniteDeplacement = Indemnité de déplacement
 IndemniteKilometrique = Indemnité kilométrique
 
-# Avantages en nature
-AvantageNatureLogement = Av. nature: Logement
-AvantageNatureVehicule = Av. nature: Véhicule
-AvantageNatureDomestique = Av. nature: Domestique
-AvantageNatureNourriture = Av. nature: Nourriture
-AvantageNatureAutres = Av. nature: Autres
-
-# Heures supplémentaires
-HeuresSup15 = Heures sup. 15%% (41è-46è h)
-HeuresSup50 = Heures sup. 50%% (au-delà 46h)
-HeuresSup75 = Heures sup. 75%% (nuit/dimanche)
-HeuresSup100 = Heures sup. 100%% (nuit+dimanche)
-
-# Totaux
-SalaireBrut = Salaire brut
-BrutImposable = Brut imposable
-SalaireNet = Salaire net
-NetAPayer = Net à payer
-CoutEmployeur = Coût total employeur
-MasseSalariale = Masse salariale
-
 # CNPS
-CNPSRetraiteSal = CNPS Retraite (salarié)
-CNPSRetraitePat = CNPS Retraite (employeur)
-CNPSPF = CNPS Prestations familiales
-CNPSAT = CNPS Accidents du travail
-CMU = CMU (Couverture Maladie)
+CNPSRetraite = CNPS Retraite
+CNPSPF = CNPS Prestations Familiales
+CNPSAT = CNPS Accidents du Travail
+CMU = CMU / CNAM
 
-# Charges fiscales patronales
-ImpotEmployeur = Impôt Employeur (IE) 1,2%%
-FDFPTA = FDFP / Taxe Apprentissage (TA) 0,4%%
-FDFPFPC = FDFP / Formation Prof. Continue (FPC) 0,6%%
+# ITS V4
+ITS = Impôts sur Traitements et Salaires
+IBS = IBS (Impôt sur le Revenu des Salaires)
+RICF = RICF (Réduction pour Charges de Famille)
+ITSTotal = ITS net
+BaremeIBS = Barème IBS mensuel
+OrdonnanceITS = Ordonnance n° 2023-719 du 13/09/2023
 
-# ITS
-ITSIS = IS (Impôt sur Salaires)
-ITSCN = CN (Contribution Nationale)
-ITSIGR = IGR (Impôt Général sur le Revenu)
-ITSTotal = Total ITS
+# Charges patronales V4
+ContributionEmployeur = Contribution employeur
+ContributionEmployeurLocal = Contribution employeur (local 2,8%)
+ContributionEmployeurExpatrie = Contribution employeur (expatrié 12%)
+FDFPTA = FDFP / Taxe d'apprentissage
+FDFPFPC = FDFP / Formation professionnelle continue
+ChargesPatronales = Charges patronales
 
 # Déductions
 AvanceSalaire = Avance sur salaire
 PretDeduction = Remboursement de prêt
 PensionAlimentaire = Pension alimentaire
-SaisieArret = Saisie-arrêt sur salaire
+SaisieArret = Saisie-arrêt
 MutuelleComplementaire = Mutuelle complémentaire
 AutresRetenues = Autres retenues
 
@@ -94,27 +100,31 @@ AutresRetenues = Autres retenues
 StatusDraft = Brouillon
 StatusValidated = Validé
 
-# Actions / événements
-PayslipCreated = Bulletin de paie créé
-PayslipValidated = Bulletin de paie validé
-PayslipModified = Bulletin de paie modifié
-PayslipDeleted = Bulletin de paie supprimé
-PayslipPDFGenerated = PDF bulletin généré
+# Actions
+CreatePayslip = Créer le bulletin
+EditPayslip = Modifier le bulletin
+ValidatePayslip = Valider le bulletin
+SetDraft = Remettre en brouillon
+DeletePayslip = Supprimer le bulletin
+GeneratePDF = Générer PDF
 
-# Dashboard
-TableauDeBord = Tableau de bord Paie
-IndicateursAnnuels = Indicateurs annuels
-DetailMensuel = Détail mensuel
-TopEmployes = Top employés
+# Rapports
+LivreDePaie = Livre de paie
+Etat301 = État 301 - Déclaration annuelle
+JournalDePaie = Journal de paie
+RapportsMensuel = Rapports mensuels
 
 # Admin
-ConfigEntreprise = Informations entreprise
-ParametresDefaut = Paramètres par défaut
-BaremesReference = Barèmes en vigueur
-ChampPersonnalises = Champs personnalisés
+ConfigPayrollCI = Configuration PayrollCI
+CompanyCNPS = N° CNPS entreprise
+CompanyCMU = N° CMU entreprise
+CompanyRCCM = RCCM
+RefPrefix = Préfixe des références
+DefaultSecteur = Secteur par défaut
+DefaultVille = Ville par défaut
 
-# Permissions
-Permission500001 = Lire les bulletins de paie
-Permission500002 = Créer/modifier les bulletins
-Permission500003 = Supprimer les bulletins
-Permission500004 = Exporter les bulletins
+# Dashboard
+TableauDeBord = Tableau de bord
+MasseSalariale = Masse salariale
+IndicateursAnnuels = Indicateurs annuels
+TopEmployes = Top employés
