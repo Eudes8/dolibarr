@@ -1,355 +1,161 @@
-# 🇨🇮 PayrollCI — Module de Paie Côte d'Ivoire pour Dolibarr
+# PayrollCI - Module de Paie Côte d'Ivoire pour Dolibarr
 
-> **Version 2.0.0** — Gestion complète de la paie conforme au droit du travail ivoirien (2026)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/Eudes8/dolibarr)
+[![Dolibarr](https://img.shields.io/badge/Dolibarr-16.0+-green.svg)](https://www.dolibarr.org)
+[![Licence](https://img.shields.io/badge/licence-GPL--3.0-orange.svg)](LICENSE)
+[![Pays](https://img.shields.io/badge/pays-C%C3%B4te%20d'Ivoire-brightgreen.svg)]()
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Dolibarr-16%2B-blue" alt="Dolibarr 16+">
-  <img src="https://img.shields.io/badge/PHP-7.4%2B-purple" alt="PHP 7.4+">
-  <img src="https://img.shields.io/badge/Licence-GPL%20v3-green" alt="GPL v3">
-  <img src="https://img.shields.io/badge/Pays-C%C3%B4te%20d'Ivoire-orange" alt="Côte d'Ivoire">
-</p>
+## Description
 
----
+**PayrollCI** est un module complet de gestion de la paie pour Dolibarr, conforme à la législation ivoirienne en vigueur (Ordonnance n° 2023-719 du 13/09/2023). Il prend en charge le calcul automatique de toutes les cotisations sociales et fiscales, la génération de bulletins de paie professionnels au format PDF (style Sage Paie), ainsi que les états réglementaires obligatoires.
 
-## 📖 Description
+## Fonctionnalités principales
 
-**PayrollCI** est un module personnalisé pour [Dolibarr ERP/CRM](https://www.dolibarr.org/) permettant de gérer intégralement la paie des salariés en Côte d'Ivoire. Il intègre tous les éléments de rémunération prévus par la **Convention Collective Interprofessionnelle (CCI)**, le **Code du Travail**, le **Code Général des Impôts** et la réglementation **CNPS/CMU** en vigueur en 2026.
+### Calculs conformes à la loi ivoirienne
 
-### ✨ Fonctionnalités principales
+- **IBS (Impôt sur les Bénéfices et Salaires)** — Barème progressif à 6 tranches :
+  | Tranche mensuelle | Taux |
+  |---|---|
+  | 0 – 75 000 FCFA | 0% |
+  | 75 001 – 240 000 FCFA | 16% |
+  | 240 001 – 800 000 FCFA | 21% |
+  | 800 001 – 2 400 000 FCFA | 24% |
+  | 2 400 001 – 8 000 000 FCFA | 28% |
+  | > 8 000 000 FCFA | 32% |
 
-- 📝 Création de bulletins de paie complets
-- 📊 Calcul automatique de toutes les cotisations sociales et impôts
-- 📄 Génération de bulletins de paie PDF conformes à l'Art. 46.2 CCI
-- 📋 Liste et suivi de tous les bulletins
-- ⚙️ Configuration par entreprise (secteur, ville, paramètres par défaut)
+- **RICF (Réduction d'Impôt pour Charges de Famille)** — 11 000 × (N − 1) / mois, max 5 parts
+- **CNPS** — Retraite 6,3% (salarié) + 7,7% (employeur), plafond 2 700 000 FCFA/mois
+- **Prestations Familiales** — 5,75% employeur
+- **Accidents du Travail** — 2% à 5% employeur selon secteur
+- **Contribution Employeur** — 2,8% local / 12% expatrié
+- **FDFP** — TA 0,6% + FPC 1,2% employeur
 
----
+### 13 Secteurs d'activité
 
-## 💰 Éléments de rémunération pris en charge
+Agriculture, BTP, Industrie, Commerce, Transport, Hôtellerie, Banque/Assurance, Télécoms, Mines, Pétrole, Santé, Éducation, Services.
 
-### Salaire de base
-| Élément | Description |
-|---------|-------------|
-| Salaire catégoriel | Salaire de base selon la grille catégorielle |
-| Sursalaire | Complément au-dessus du salaire catégoriel |
+### Calcul automatique de l'ancienneté
 
-### 🏅 Primes CCI (12 primes)
+- Saisie de la **date d'embauche** (pas de saisie manuelle de l'ancienneté)
+- Calcul automatique du nombre d'années
+- Prime d'ancienneté selon la Convention Collective :
+  - 2% après 2 ans, +1% par an jusqu'à 25% maximum
 
-| Prime | Description |
-|-------|-------------|
-| **Ancienneté** | Auto-calculée : 2% après 24 mois sur salaire catégoriel, +1% par année supplémentaire, plafond 25% |
-| Rendement | Basée sur la performance individuelle |
-| Technicité | Compétences techniques spécifiques |
-| Fonction | Responsabilités liées au poste |
-| Responsabilité | Niveau de responsabilité hiérarchique |
-| Risque | Exposition à des conditions dangereuses |
-| Outillage | Utilisation d'outils personnels |
-| Salissure | Travaux salissants |
-| Caisse | Manipulation de fonds |
-| Assiduité | Régularité de présence |
-| Panier | Repas lors de conditions spéciales |
-| Gratification / 13ème mois | Max 75% du salaire catégoriel (prorata) |
+### Bulletin de paie PDF professionnel (style Sage Paie)
 
-### 🚗 Indemnités (6 types)
+- En-tête avec bandeau bleu "BULLETIN DE PAIE"
+- Lignes numérotées (10 à 37) identiques au format Sage
+- 10 colonnes : N° | Désignation | Nombre | Base | Taux sal. | Gain | Retenue sal. | Taux pat. | Cotis. pat.(+) | Cotis. pat.(-)
+- Sections : TOTAL BRUT IMPOSABLE / TOTAL COTISATIONS SALARIALES
+- Tableau CUMULS (période + année)
+- Zones VISA EMPLOYEUR / VISA EMPLOYÉ
+- NET A PAYER en surbrillance
 
-| Indemnité | Détails |
-|-----------|---------|
-| Transport | Exonéré selon la ville (voir tableau ci-dessous) |
-| Logement | Compensation logement |
-| Représentation | Frais de représentation |
-| Expatriation | Prime d'expatriation |
-| Déplacement | Frais de déplacement professionnel |
-| Kilométrique | Remboursement kilométrique |
+### États et rapports réglementaires
 
-**Transport exonéré par ville :**
+| Rapport | Description |
+|---|---|
+| **Livre de Paie** | Registre mensuel de tous les bulletins avec totaux |
+| **État 301 (CDIR)** | Déclaration annuelle des salaires — échéance 30 mai / 30 juin |
+| **Journal de Paie** | Écritures comptables de la paie pour intégration |
 
-| Ville | Plafond exonéré |
-|-------|----------------|
-| Abidjan | 30 000 FCFA |
-| Bouaké | 24 000 FCFA |
-| Yamoussoukro, San-Pédro, Korhogo, Daloa, Autres | 20 000 FCFA |
+### Interface Dolibarr native
 
-### 🏠 Avantages en nature (5 types)
+- Icônes professionnelles `img_picto()` (pas d'emojis)
+- Onglets : Bulletin | Notes | Documents | Agenda | Liens
+- Tableau de bord avec statistiques et graphiques
+- Liste avec filtres, tri et pagination
+- Administration : Configuration, Champs extra, À propos
 
-| Avantage | Description |
-|----------|-------------|
-| Logement | Valeur locative du logement fourni |
-| Véhicule | Mise à disposition d'un véhicule |
-| Domestique | Personnel de maison |
-| Nourriture | Repas fournis |
-| Autres | Tout autre avantage |
-
-### ⏰ Heures supplémentaires (taux CCI)
-
-| Type | Taux | Conditions |
-|------|------|------------|
-| HS 15% | +15% | 41ème à 46ème heure hebdomadaire |
-| HS 50% | +50% | Au-delà de 46 heures |
-| HS 75% | +75% | Nuit ou Dimanche/Jour férié |
-| HS 100% | +100% | Nuit **et** Dimanche/Jour férié |
-
-> **Base de calcul HS** = Salaire catégoriel + Sursalaire + Technicité + Rendement + Fonction + Responsabilité
-> *(Excluant : ancienneté, assiduité, transport, etc.)*
-
----
-
-## 🏦 Cotisations sociales CNPS
-
-| Cotisation | Taux salarié | Taux patronal | Plafond mensuel |
-|-----------|:------------:|:-------------:|:---------------:|
-| Retraite | 6,3% | 7,7% | 3 375 000 FCFA |
-| Prestations Familiales | — | 5,75% | 70 000 FCFA |
-| Accident du Travail | — | 2% à 5% ¹ | 70 000 FCFA |
-| CMU | 500 F/mois | 500 F/mois | forfaitaire |
-
-¹ *Le taux AT varie selon le secteur d'activité (voir ci-dessous)*
-
-### Taux AT par secteur d'activité
-
-| Secteur | Taux AT |
-|---------|:-------:|
-| Commerce, Services, Banque/Assurance, Télécoms | 2,0% |
-| Hôtellerie / Restauration | 2,5% |
-| Industrie légère, Agriculture, Santé | 3,0% |
-| Transport | 3,5% |
-| BTP / Construction, Pétrole / Énergie | 4,0% |
-| Mines / Extraction | 5,0% |
-
----
-
-## 🏛️ Charges fiscales patronales
-
-| Charge | Taux | Assiette |
-|--------|:----:|----------|
-| Impôt Employeur (IE) | 1,2% | Brut imposable |
-| FDFP / Taxe d'Apprentissage (TA) | 0,4% | Masse salariale |
-| FDFP / Formation Prof. Continue (FPC) | 0,6% | Masse salariale |
-
----
-
-## 📊 ITS — Impôts sur Traitements et Salaires
-
-### Impôt sur Salaire (IS)
-- Taux : **1,5%** sur 80% du brut imposable
-
-### Contribution Nationale (CN) — Barème progressif
-
-| Tranche mensuelle (FCFA) | Taux |
-|---------------------------|:----:|
-| 0 — 50 000 | 0% |
-| 50 001 — 130 000 | 1,5% |
-| 130 001 — 200 000 | 5% |
-| Au-delà de 200 000 | 10% |
-
-### Impôt Général sur le Revenu (IGR) — Barème progressif
-
-Calcul avec **quotient familial** (1 à 4 parts) :
-
-| Quotient Q = R/N (FCFA) | Formule |
-|--------------------------|---------|
-| 0 — 25 000 | 0 |
-| 25 001 — 45 583 | (R × 10/110) − 2 273 |
-| 45 584 — 81 583 | (R × 15/115) − 4 076 |
-| 81 584 — 126 583 | (R × 20/120) − 7 031 |
-| 126 584 — 220 333 | (R × 25/125) − 11 250 |
-| 220 334 — 389 083 | (R × 35/135) − 24 306 |
-| 389 084 — 842 166 | (R × 45/145) − 44 181 |
-| Au-delà de 842 166 | (R × 60/160) − 98 633 |
-
-**Nombre de parts :**
-| Situation | Parts |
-|-----------|:-----:|
-| Célibataire sans enfant | 1,0 |
-| Marié(e) sans enfant | 2,0 |
-| Par enfant à charge | +0,5 |
-| Maximum | 4,0 |
-
----
-
-## ➖ Déductions
-
-| Déduction | Description |
-|-----------|-------------|
-| Avance sur salaire | Remboursement d'avance |
-| Prêt | Remboursement de prêt employeur |
-| Pension alimentaire | Retenue judiciaire |
-| Saisie-arrêt | Saisie sur salaire |
-| Mutuelle complémentaire | Cotisation mutuelle |
-| Autres retenues | Toute autre déduction |
-
----
-
-## 🛠️ Installation
-
-### Prérequis
-
-- **Dolibarr** 16.0 ou supérieur
-- **PHP** 7.4+
-- **MySQL** 5.7+ / **MariaDB** 10.3+
-
-### Méthode 1 : Installation manuelle
-
-1. **Cloner le dépôt** (ou télécharger le ZIP) :
-   ```bash
-   git clone https://github.com/Eudes8/dolibarr.git
-   cd dolibarr
-   ```
-
-2. **Copier le module** dans le dossier `custom` de votre Dolibarr :
-   ```bash
-   cp -r htdocs/custom/payrollci /chemin/vers/dolibarr/htdocs/custom/
-   ```
-
-3. **Exécuter le script SQL** pour créer la table :
-   ```bash
-   mysql -u root -p votre_base < htdocs/custom/payrollci/sql/llx_payrollci_payslip.sql
-   mysql -u root -p votre_base < htdocs/custom/payrollci/sql/llx_payrollci_payslip.key.sql
-   ```
-
-4. **Activer le module** dans Dolibarr :
-   - Aller dans `Accueil → Configuration → Modules/Applications`
-   - Chercher "PayrollCI" dans la catégorie "Ressources Humaines"
-   - Cliquer sur le bouton pour activer
-
-### Méthode 2 : Docker (recommandé pour tester)
-
-```bash
-docker run -d \
-  --name dolibarr \
-  -p 8080:80 \
-  -e DOLI_DB_HOST=db \
-  -e DOLI_DB_USER=dolibarr \
-  -e DOLI_DB_PASSWORD=dolibarr \
-  -e DOLI_DB_NAME=dolibarr \
-  -e DOLI_ADMIN_LOGIN=admin \
-  -e DOLI_ADMIN_PASSWORD=admin \
-  -e DOLI_URL_ROOT=http://localhost:8080 \
-  --link dolibarr-db:db \
-  tuxgasy/dolibarr:latest
-```
-
-Puis copier le dossier `payrollci` dans le conteneur :
-```bash
-docker cp htdocs/custom/payrollci dolibarr:/var/www/html/custom/
-```
-
----
-
-## 📁 Structure du module
+## Structure du module
 
 ```
 htdocs/custom/payrollci/
 ├── admin/
-│   └── setup.php                          # Page de configuration
-├── card.php                               # Formulaire création/édition bulletin
+│   ├── about.php              # Page À propos (v4.0.0)
+│   ├── extrafields.php        # Champs personnalisés
+│   └── setup.php              # Configuration (barème IBS, secteurs)
 ├── class/
-│   ├── payrollci_calc.class.php           # 🧮 Moteur de calcul (toutes les constantes, taux, barèmes)
-│   └── payslip.class.php                  # 💾 Classe CRUD (create/read/update/delete)
-├── core/
-│   └── modules/
-│       ├── modPayrollCI.class.php         # 📦 Descripteur du module
-│       └── payrollci/
-│           └── doc/
-│               └── pdf_bulletinpaie.modules.php  # 📄 Générateur PDF bulletin de paie
-├── index.php                              # Redirection vers list.php
-├── langs/
-│   └── fr_FR/
-│       └── payrollci.lang                 # 🌐 Traductions françaises
+│   ├── payrollci_calc.class.php   # Moteur de calcul (IBS/RICF/CNPS/FDFP)
+│   └── payslip.class.php         # Classe métier bulletin de paie
+├── core/modules/
+│   ├── modPayrollCI.class.php     # Descripteur du module
+│   └── payrollci/doc/
+│       └── pdf_bulletinpaie.modules.php  # Générateur PDF (style Sage)
+├── langs/fr_FR/
+│   └── payrollci.lang             # Traductions françaises (~90 clés)
 ├── lib/
-│   └── payrollci.lib.php                  # 🔧 Fonctions utilitaires
-├── list.php                               # 📋 Liste des bulletins
-└── sql/
-    ├── llx_payrollci_payslip.sql          # 🗃️ Schéma de la table (~70 colonnes)
-    └── llx_payrollci_payslip.key.sql      # 🔑 Index et clés
+│   └── payrollci.lib.php          # Bibliothèque partagée
+├── sql/
+│   ├── llx_payrollci_payslip.sql              # Table principale
+│   ├── llx_payrollci_payslip.key.sql          # Index et clés
+│   └── llx_payrollci_payslip_extrafields.sql  # Table champs extra
+├── agenda.php                 # Onglet Agenda
+├── card.php                   # Fiche bulletin (création/édition)
+├── dashboard.php              # Tableau de bord
+├── document.php               # Onglet Documents
+├── index.php                  # Page d'accueil du module
+├── linked.php                 # Onglet Éléments liés
+├── list.php                   # Liste des bulletins
+├── note.php                   # Onglet Notes
+├── report_etat301.php         # Rapport État 301
+├── report_journal.php         # Rapport Journal de paie
+├── report_livrepaie.php       # Rapport Livre de paie
+└── tab_user.php               # Onglet utilisateur
 ```
 
----
+## Installation
 
-## 🧪 Exemple de test
+1. Copier le dossier `payrollci/` dans `htdocs/custom/`
+2. Aller dans **Accueil > Configuration > Modules**
+3. Rechercher "PayrollCI" et activer le module
+4. Configurer dans **Configuration > Modules > PayrollCI > Configuration**
 
-**Scénario : Employé à Abidjan, marié, 2 enfants**
+## Prérequis
 
-| Paramètre | Valeur |
-|-----------|--------|
-| Salaire catégoriel | 300 000 FCFA |
-| Sursalaire | 50 000 FCFA |
-| Ancienneté | 36 mois |
-| Prime de rendement | 25 000 FCFA |
-| Prime de technicité | 15 000 FCFA |
-| Indemnité transport | 35 000 FCFA |
-| Situation familiale | Marié(e) |
-| Enfants à charge | 2 |
-| Ville | Abidjan |
-| Secteur | Commerce (AT 2%) |
+- Dolibarr 16.0 ou supérieur
+- PHP 7.4 ou supérieur
+- MySQL 5.7+ / MariaDB 10.3+
 
-**Résultat attendu :**
-- Prime d'ancienneté auto-calculée : 2% + 1% = 3% × 300 000 = 9 000 FCFA
-- Transport exonéré : 30 000 FCFA (Abidjan)
-- Transport imposable : 35 000 − 30 000 = 5 000 FCFA
-- Nombre de parts IGR : 3,0 (marié + 2 enfants × 0,5)
-- Le module calcule automatiquement le brut, les cotisations CNPS, l'ITS et le net à payer
+## Configuration
 
----
+### Paramètres principaux
+- **Secteur d'activité** — Détermine le taux AT (accidents du travail)
+- **Barème IBS** — Affiché en lecture seule (conforme à l'ordonnance 2023)
+- **Numérotation** — Format automatique des bulletins
 
-## ⚙️ Configuration
+## Changelog
 
-Accéder à **Accueil → Configuration → Modules → PayrollCI → Configuration** pour définir :
+### v4.0.0 (2026-04-15)
+- **NOUVEAU** : Barème IBS 6 tranches (Ordonnance n° 2023-719)
+- **NOUVEAU** : RICF remplace l'ancien système IS/CN/IGR
+- **NOUVEAU** : Contribution employeur 2,8% local / 12% expatrié
+- **NOUVEAU** : Calcul automatique ancienneté via date d'embauche
+- **NOUVEAU** : PDF bulletin style Sage Paie (lignes numérotées 10-37)
+- **NOUVEAU** : Rapport Livre de Paie
+- **NOUVEAU** : Rapport État 301 (CDIR)
+- **NOUVEAU** : Rapport Journal de Paie
+- **CORRECTION** : Icônes professionnelles img_picto() (fini les emojis)
+- **CORRECTION** : Intégration complète avec le cœur Dolibarr
 
-- **Ville par défaut** (pour le transport exonéré)
-- **Secteur d'activité par défaut** (pour le taux AT)
-- Consultation des barèmes de référence (CN, IGR, CNPS)
+### v3.0.0
+- Intégration complète dans Dolibarr (21 fichiers)
+- Onglets natifs, tableau de bord, génération PDF
 
----
+### v2.0.0
+- Refonte complète : CCI, primes, 13 secteurs d'activité
 
-## 📜 Sources juridiques
+### v1.0.0
+- Version initiale avec calculs de base
 
-| Texte | Contenu |
-|-------|---------|
-| Convention Collective Interprofessionnelle (CCI) | Primes, indemnités, heures supplémentaires, bulletin de paie (Art. 46.2) |
-| Code du Travail de Côte d'Ivoire | Durée du travail, congés, SMIG |
-| Code Général des Impôts (CGI) | ITS (IS, CN, IGR), charges fiscales patronales |
-| Code de Prévoyance Sociale | CNPS : retraite, PF, AT |
-| Loi CMU | Cotisation universelle maladie |
-| Décrets FDFP | Taxe d'apprentissage, Formation professionnelle continue |
+## Licence
 
----
+Ce module est distribué sous licence [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html).
 
-## 🚀 Évolutions futures
+## Auteur
 
-- [ ] Gestion multi-employés (paie en masse)
-- [ ] Import/export des bulletins (CSV, Excel)
-- [ ] Historique et comparaison mois par mois
-- [ ] Déclarations CNPS automatiques
-- [ ] Déclarations fiscales annuelles (DISA)
-- [ ] Gestion des congés payés
-- [ ] Interface de saisie des heures
+Développé par **Eudes8** — Côte d'Ivoire
 
 ---
 
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Pour contribuer :
-
-1. Forker le projet
-2. Créer une branche (`git checkout -b feature/amelioration`)
-3. Committer vos modifications (`git commit -m 'Ajout de fonctionnalité'`)
-4. Pousser la branche (`git push origin feature/amelioration`)
-5. Ouvrir une Pull Request
-
----
-
-## 📝 Licence
-
-Ce projet est sous licence **GPL v3.0** — voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
----
-
-## 👨‍💻 Auteur
-
-- **Eudes8** — [GitHub](https://github.com/Eudes8)
-
----
-
-<p align="center">
-  <em>Fait avec ❤️ pour la Côte d'Ivoire 🇨🇮</em>
-</p>
+*Module conforme à la législation fiscale et sociale ivoirienne en vigueur au 15 avril 2026.*
