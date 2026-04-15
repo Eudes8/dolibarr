@@ -1,15 +1,26 @@
 Module500000Name = PayrollCI
-Module500000Desc = Gestion complète de la paie - Droit ivoirien 2026
+Module500000Desc = Gestion complète de la paie - Droit ivoirien 2026 (v3)
 
 # Menu
 PayrollCI = Paie CI
 PayrollCIMenu = Bulletins de paie
 PayrollCISetup = Configuration PayrollCI
 PayrollCIAbout = À propos de PayrollCI
+BulletinsDePaie = Bulletins de paie
 
-# Champs
+# Navigation
+Fiche = Fiche
+BackToList = Retour à la liste
+
+# Champs employé
+Employee = Employé
+EmployeeName = Nom de l'employé
+
+# Salaire de base
 SalaireBase = Salaire catégoriel (base)
 Sursalaire = Sursalaire
+
+# Primes CCI
 PrimeAnciennete = Prime d'ancienneté
 PrimeRendement = Prime de rendement
 PrimeTechnicite = Prime de technicité
@@ -23,6 +34,7 @@ PrimeAssiduite = Prime d'assiduité/ponctualité
 PrimePanier = Prime de panier (repas nuit)
 Gratification = Gratification / 13ème mois
 
+# Indemnités
 IndemniteTransport = Indemnité de transport
 TransportNonImposable = Transport non imposable
 IndemniteLogement = Indemnité de logement
@@ -31,21 +43,26 @@ IndemniteExpatriation = Indemnité d'expatriation
 IndemniteDeplacement = Indemnité de déplacement
 IndemniteKilometrique = Indemnité kilométrique
 
+# Avantages en nature
 AvantageNatureLogement = Av. nature: Logement
 AvantageNatureVehicule = Av. nature: Véhicule
 AvantageNatureDomestique = Av. nature: Domestique
 AvantageNatureNourriture = Av. nature: Nourriture
 AvantageNatureAutres = Av. nature: Autres
 
+# Heures supplémentaires
 HeuresSup15 = Heures sup. 15%% (41è-46è h)
 HeuresSup50 = Heures sup. 50%% (au-delà 46h)
 HeuresSup75 = Heures sup. 75%% (nuit/dimanche)
 HeuresSup100 = Heures sup. 100%% (nuit+dimanche)
 
+# Totaux
 SalaireBrut = Salaire brut
 BrutImposable = Brut imposable
 SalaireNet = Salaire net
 NetAPayer = Net à payer
+CoutEmployeur = Coût total employeur
+MasseSalariale = Masse salariale
 
 # CNPS
 CNPSRetraiteSal = CNPS Retraite (salarié)
@@ -76,3 +93,28 @@ AutresRetenues = Autres retenues
 # Statuts
 StatusDraft = Brouillon
 StatusValidated = Validé
+
+# Actions / événements
+PayslipCreated = Bulletin de paie créé
+PayslipValidated = Bulletin de paie validé
+PayslipModified = Bulletin de paie modifié
+PayslipDeleted = Bulletin de paie supprimé
+PayslipPDFGenerated = PDF bulletin généré
+
+# Dashboard
+TableauDeBord = Tableau de bord Paie
+IndicateursAnnuels = Indicateurs annuels
+DetailMensuel = Détail mensuel
+TopEmployes = Top employés
+
+# Admin
+ConfigEntreprise = Informations entreprise
+ParametresDefaut = Paramètres par défaut
+BaremesReference = Barèmes en vigueur
+ChampPersonnalises = Champs personnalisés
+
+# Permissions
+Permission500001 = Lire les bulletins de paie
+Permission500002 = Créer/modifier les bulletins
+Permission500003 = Supprimer les bulletins
+Permission500004 = Exporter les bulletins
