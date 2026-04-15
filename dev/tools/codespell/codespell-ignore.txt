@@ -115,3 +115,9 @@ remplace
 syntaxe
 exercice
 fonctions
+objet
+objets
+liens
+classe
+formule
+informations
