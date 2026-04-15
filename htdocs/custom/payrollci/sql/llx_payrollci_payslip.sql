@@ -1,6 +1,7 @@
 -- ============================================================================
--- Module PayrollCI - Bulletin de Paie Côte d'Ivoire
--- Table principale des bulletins de paie
+-- Module PayrollCI v2 - Bulletin de Paie Côte d'Ivoire (Complet)
+-- Tous les éléments de salaire/rémunération du droit ivoirien 2026
+-- Sources: CCI, Code du Travail CI, Code Général des Impôts, CNPS, FDFP
 -- ============================================================================
 
 CREATE TABLE llx_payrollci_payslip (
@@ -8,7 +9,7 @@ CREATE TABLE llx_payrollci_payslip (
     ref             VARCHAR(128) NOT NULL,
     entity          INTEGER DEFAULT 1 NOT NULL,
 
-    -- Employé
+    -- ===== EMPLOYÉ =====
     fk_user         INTEGER NOT NULL,
     employee_name   VARCHAR(255),
     employee_job    VARCHAR(255),
@@ -16,64 +17,114 @@ CREATE TABLE llx_payrollci_payslip (
     employee_echelon VARCHAR(50),
     numero_cnps     VARCHAR(50),
     numero_cmu      VARCHAR(50),
+    matricule       VARCHAR(50),
 
-    -- Période
+    -- ===== PÉRIODE =====
     date_start      DATE NOT NULL,
     date_end        DATE NOT NULL,
     date_creation   DATETIME,
     date_valid      DATETIME,
 
-    -- Situation familiale pour IGR
+    -- ===== SITUATION FAMILIALE (IGR) =====
     situation_familiale VARCHAR(20) DEFAULT 'celibataire',
     nombre_enfants  INTEGER DEFAULT 0,
     nombre_parts    DOUBLE(4,1) DEFAULT 1.0,
 
-    -- Éléments de rémunération
+    -- ===== SALAIRE DE BASE =====
     salaire_base        DOUBLE(24,8) DEFAULT 0,
-    prime_anciennete    DOUBLE(24,8) DEFAULT 0,
-    prime_transport     DOUBLE(24,8) DEFAULT 0,
-    prime_logement      DOUBLE(24,8) DEFAULT 0,
-    prime_responsabilite DOUBLE(24,8) DEFAULT 0,
-    prime_salissure     DOUBLE(24,8) DEFAULT 0,
-    heures_sup_25       DOUBLE(24,8) DEFAULT 0,
-    heures_sup_50       DOUBLE(24,8) DEFAULT 0,
-    autres_primes       DOUBLE(24,8) DEFAULT 0,
-    conges_payes        DOUBLE(24,8) DEFAULT 0,
-    salaire_brut        DOUBLE(24,8) DEFAULT 0,
+    sursalaire          DOUBLE(24,8) DEFAULT 0,
 
-    -- Retenues CNPS (part salariale)
+    -- ===== PRIMES (Convention Collective CI) =====
+    prime_anciennete    DOUBLE(24,8) DEFAULT 0,
+    prime_rendement     DOUBLE(24,8) DEFAULT 0,
+    prime_technicite    DOUBLE(24,8) DEFAULT 0,
+    prime_fonction      DOUBLE(24,8) DEFAULT 0,
+    prime_responsabilite DOUBLE(24,8) DEFAULT 0,
+    prime_risque        DOUBLE(24,8) DEFAULT 0,
+    prime_outillage     DOUBLE(24,8) DEFAULT 0,
+    prime_salissure     DOUBLE(24,8) DEFAULT 0,
+    prime_caisse        DOUBLE(24,8) DEFAULT 0,
+    prime_assiduite     DOUBLE(24,8) DEFAULT 0,
+    prime_panier        DOUBLE(24,8) DEFAULT 0,
+    gratification       DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== INDEMNITÉS =====
+    indemnite_transport     DOUBLE(24,8) DEFAULT 0,
+    transport_non_imposable DOUBLE(24,8) DEFAULT 0,
+    indemnite_logement      DOUBLE(24,8) DEFAULT 0,
+    indemnite_representation DOUBLE(24,8) DEFAULT 0,
+    indemnite_expatriation  DOUBLE(24,8) DEFAULT 0,
+    indemnite_deplacement   DOUBLE(24,8) DEFAULT 0,
+    indemnite_kilometrique  DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== AVANTAGES EN NATURE (barème administratif CI) =====
+    avantage_nature_logement  DOUBLE(24,8) DEFAULT 0,
+    avantage_nature_vehicule  DOUBLE(24,8) DEFAULT 0,
+    avantage_nature_domestique DOUBLE(24,8) DEFAULT 0,
+    avantage_nature_nourriture DOUBLE(24,8) DEFAULT 0,
+    avantage_nature_autres    DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== HEURES SUPPLÉMENTAIRES (Art. CCI - taux corrects) =====
+    heures_sup_15       DOUBLE(24,8) DEFAULT 0,
+    heures_sup_50       DOUBLE(24,8) DEFAULT 0,
+    heures_sup_75       DOUBLE(24,8) DEFAULT 0,
+    heures_sup_100      DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== CONGÉS & AUTRES GAINS =====
+    conges_payes        DOUBLE(24,8) DEFAULT 0,
+    autres_primes       DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== TOTAUX BRUTS =====
+    salaire_brut            DOUBLE(24,8) DEFAULT 0,
+    brut_imposable          DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== RETENUES SALARIALES CNPS =====
     cnps_retraite_sal   DOUBLE(24,8) DEFAULT 0,
     cmu_sal             DOUBLE(24,8) DEFAULT 0,
 
-    -- Charges patronales CNPS
+    -- ===== CHARGES PATRONALES CNPS =====
     cnps_retraite_pat   DOUBLE(24,8) DEFAULT 0,
     cnps_pf_pat         DOUBLE(24,8) DEFAULT 0,
     cnps_at_pat         DOUBLE(24,8) DEFAULT 0,
     cmu_pat             DOUBLE(24,8) DEFAULT 0,
 
-    -- ITS (Impôts sur Traitements et Salaires)
+    -- ===== CHARGES FISCALES PATRONALES =====
+    impot_employeur     DOUBLE(24,8) DEFAULT 0,
+    fdfp_ta             DOUBLE(24,8) DEFAULT 0,
+    fdfp_fpc            DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== ITS (Impôts sur Traitements et Salaires) =====
     its_is              DOUBLE(24,8) DEFAULT 0,
     its_cn              DOUBLE(24,8) DEFAULT 0,
     its_igr             DOUBLE(24,8) DEFAULT 0,
     its_total           DOUBLE(24,8) DEFAULT 0,
 
-    -- Totaux
-    total_retenues_sal  DOUBLE(24,8) DEFAULT 0,
-    total_charges_pat   DOUBLE(24,8) DEFAULT 0,
-    salaire_net_imposable DOUBLE(24,8) DEFAULT 0,
-    salaire_net         DOUBLE(24,8) DEFAULT 0,
+    -- ===== TOTAUX =====
+    total_retenues_sal      DOUBLE(24,8) DEFAULT 0,
+    total_charges_sociales  DOUBLE(24,8) DEFAULT 0,
+    total_charges_fiscales  DOUBLE(24,8) DEFAULT 0,
+    total_charges_pat       DOUBLE(24,8) DEFAULT 0,
+    salaire_net_imposable   DOUBLE(24,8) DEFAULT 0,
+    salaire_net             DOUBLE(24,8) DEFAULT 0,
 
-    -- Avances et acomptes
+    -- ===== DÉDUCTIONS DIVERSES =====
     avance_salaire      DOUBLE(24,8) DEFAULT 0,
     pret_deduction      DOUBLE(24,8) DEFAULT 0,
+    pension_alimentaire DOUBLE(24,8) DEFAULT 0,
+    saisie_arret        DOUBLE(24,8) DEFAULT 0,
+    mutuelle_complementaire DOUBLE(24,8) DEFAULT 0,
     autres_retenues     DOUBLE(24,8) DEFAULT 0,
+
+    -- ===== NET À PAYER =====
     net_a_payer         DOUBLE(24,8) DEFAULT 0,
 
-    -- Secteur d'activité (pour taux AT)
+    -- ===== PARAMÈTRES =====
     secteur_activite    VARCHAR(100) DEFAULT 'commerce',
     taux_at             DOUBLE(6,2) DEFAULT 2.00,
+    ville               VARCHAR(50) DEFAULT 'abidjan',
+    anciennete_mois     INTEGER DEFAULT 0,
 
-    -- Statut
+    -- ===== STATUT =====
     status              INTEGER DEFAULT 0,
     note_private        TEXT,
     note_public         TEXT,
