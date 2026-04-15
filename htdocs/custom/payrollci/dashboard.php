@@ -62,8 +62,8 @@ print '<tr class="oddeven"><td>'.img_picto('', 'company', 'class="pictofixedwidt
 $coutTotal = $grandTotal['brut'] + $grandTotal['pat'];
 print '<tr class="oddeven" style="background-color:#ffeaea;"><td><b>'.img_picto('', 'warning', 'class="pictofixedwidth"').'Coût total employeur</b></td><td class="right" style="color:#c0392b;"><b>'.payrollci_format_amount($coutTotal).' FCFA</b></td></tr>';
 print '<tr class="oddeven"><td>'.img_picto('', 'tax', 'class="pictofixedwidth"').'Total retenues salariales (CNPS + ITS)</td><td class="right">'.payrollci_format_amount($grandTotal['ret']).' FCFA</td></tr>';
-print '<tr class="oddeven"><td>&nbsp;&nbsp;dont ITS (IBS - RICF)</td><td class="right">'.payrollci_format_amount($grandTotal['its']).' FCFA</td></tr>';
-print '<tr class="oddeven"><td>&nbsp;&nbsp;dont CNPS salarié (retraite)</td><td class="right">'.payrollci_format_amount($grandTotal['cnps']).' FCFA</td></tr>';
+print '<tr class="oddeven"><td>&nbsp;&nbsp;- ITS (IBS - RICF)</td><td class="right">'.payrollci_format_amount($grandTotal['its']).' FCFA</td></tr>';
+print '<tr class="oddeven"><td>&nbsp;&nbsp;- CNPS salarié (retraite)</td><td class="right">'.payrollci_format_amount($grandTotal['cnps']).' FCFA</td></tr>';
 print '</table></div><br>';
 
 print '<div class="div-table-responsive">';
