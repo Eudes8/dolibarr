@@ -1,7 +1,7 @@
 -- ============================================================================
--- Module PayrollCI v2 - Bulletin de Paie Côte d'Ivoire (Complet)
--- Tous les éléments de salaire/rémunération du droit ivoirien 2026
--- Sources: CCI, Code du Travail CI, Code Général des Impôts, CNPS, FDFP
+-- Module PayrollCI v4 - Bulletin de Paie Côte d'Ivoire
+-- Conforme à l'Ordonnance n° 2023-719 du 13/09/2023 (Réforme ITS)
+-- Sources: CGI CI 2024, CCI, Code du Travail, CNPS, FDFP
 -- ============================================================================
 
 CREATE TABLE llx_payrollci_payslip (
@@ -18,14 +18,16 @@ CREATE TABLE llx_payrollci_payslip (
     numero_cnps     VARCHAR(50),
     numero_cmu      VARCHAR(50),
     matricule       VARCHAR(50),
+    is_expatrie     TINYINT(1) DEFAULT 0,
 
-    -- ===== PÉRIODE =====
+    -- ===== DATES =====
+    date_embauche   DATE,
     date_start      DATE NOT NULL,
     date_end        DATE NOT NULL,
     date_creation   DATETIME,
     date_valid      DATETIME,
 
-    -- ===== SITUATION FAMILIALE (IGR) =====
+    -- ===== SITUATION FAMILIALE (RICF) =====
     situation_familiale VARCHAR(20) DEFAULT 'celibataire',
     nombre_enfants  INTEGER DEFAULT 0,
     nombre_parts    DOUBLE(4,1) DEFAULT 1.0,
@@ -57,14 +59,14 @@ CREATE TABLE llx_payrollci_payslip (
     indemnite_deplacement   DOUBLE(24,8) DEFAULT 0,
     indemnite_kilometrique  DOUBLE(24,8) DEFAULT 0,
 
-    -- ===== AVANTAGES EN NATURE (barème administratif CI) =====
+    -- ===== AVANTAGES EN NATURE =====
     avantage_nature_logement  DOUBLE(24,8) DEFAULT 0,
     avantage_nature_vehicule  DOUBLE(24,8) DEFAULT 0,
     avantage_nature_domestique DOUBLE(24,8) DEFAULT 0,
     avantage_nature_nourriture DOUBLE(24,8) DEFAULT 0,
     avantage_nature_autres    DOUBLE(24,8) DEFAULT 0,
 
-    -- ===== HEURES SUPPLÉMENTAIRES (Art. CCI - taux corrects) =====
+    -- ===== HEURES SUPPLÉMENTAIRES =====
     heures_sup_15       DOUBLE(24,8) DEFAULT 0,
     heures_sup_50       DOUBLE(24,8) DEFAULT 0,
     heures_sup_75       DOUBLE(24,8) DEFAULT 0,
@@ -88,15 +90,14 @@ CREATE TABLE llx_payrollci_payslip (
     cnps_at_pat         DOUBLE(24,8) DEFAULT 0,
     cmu_pat             DOUBLE(24,8) DEFAULT 0,
 
-    -- ===== CHARGES FISCALES PATRONALES =====
-    impot_employeur     DOUBLE(24,8) DEFAULT 0,
+    -- ===== CHARGES FISCALES PATRONALES (Réforme 2024) =====
+    contribution_employeur DOUBLE(24,8) DEFAULT 0,
     fdfp_ta             DOUBLE(24,8) DEFAULT 0,
     fdfp_fpc            DOUBLE(24,8) DEFAULT 0,
 
-    -- ===== ITS (Impôts sur Traitements et Salaires) =====
-    its_is              DOUBLE(24,8) DEFAULT 0,
-    its_cn              DOUBLE(24,8) DEFAULT 0,
-    its_igr             DOUBLE(24,8) DEFAULT 0,
+    -- ===== ITS NOUVEAU RÉGIME (Ordonnance 2023-719) =====
+    its_ibs             DOUBLE(24,8) DEFAULT 0,
+    its_ricf            DOUBLE(24,8) DEFAULT 0,
     its_total           DOUBLE(24,8) DEFAULT 0,
 
     -- ===== TOTAUX =====
@@ -123,6 +124,11 @@ CREATE TABLE llx_payrollci_payslip (
     taux_at             DOUBLE(6,2) DEFAULT 2.00,
     ville               VARCHAR(50) DEFAULT 'abidjan',
     anciennete_mois     INTEGER DEFAULT 0,
+
+    -- ===== LIENS DOLIBARR =====
+    fk_soc              INTEGER DEFAULT NULL,
+    fk_project          INTEGER DEFAULT NULL,
+    fk_contrat          INTEGER DEFAULT NULL,
 
     -- ===== STATUT =====
     status              INTEGER DEFAULT 0,
