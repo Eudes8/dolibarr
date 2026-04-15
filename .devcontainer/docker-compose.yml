@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  dolibarr:
+    image: dolibarr/dolibarr:19
+    container_name: dolibarr-payrollci
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      DOLI_DB_HOST: mariadb
+      DOLI_DB_PORT: 3306
+      DOLI_DB_USER: dolibarr
+      DOLI_DB_PASSWORD: dolibarr
+      DOLI_DB_NAME: dolibarr
+      DOLI_DB_TYPE: mysqli
+      DOLI_URL_ROOT: http://localhost:8080
+      DOLI_ADMIN_LOGIN: admin
+      DOLI_ADMIN_PASSWORD: admin
+      DOLI_MODULES: modPayrollCI
+      DOLI_INIT_DEMO: 1
+      PHP_INI_DATE_TIMEZONE: Africa/Abidjan
+    volumes:
+      - dolibarr-docs:/var/www/documents
+      - ../htdocs/custom/payrollci:/var/www/html/custom/payrollci:cached
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:10.11
+    container_name: dolibarr-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dolibarr
+      MYSQL_USER: dolibarr
+      MYSQL_PASSWORD: dolibarr
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: dolibarr-pma
+    depends_on:
+      - mariadb
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: root
+      PMA_PASSWORD: root
+    restart: unless-stopped
+
+volumes:
+  dolibarr-docs:
+  mariadb-data:
