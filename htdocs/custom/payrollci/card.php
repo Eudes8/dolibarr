@@ -1,6 +1,7 @@
 <?php
 /* ============================================================================
- * PayrollCI v3 - Fiche bulletin de paie - Intégration Dolibarr
+ * PayrollCI v4 - Fiche bulletin de paie - Intégration Dolibarr
+ * Réforme ITS 2024 : IBS + RICF / Date d'embauche / Expatrié
  * Onglets, mode édition, documents, notes, événements, objets liés
  * ============================================================================ */
 
@@ -41,10 +42,7 @@ if (!$permissiontoread) accessforbidden();
 // ==================== ACTIONS ====================
 
 if ($cancel) {
-    if ($action == 'create') {
-        header('Location: list.php');
-        exit;
-    }
+    if ($action == 'create') { header('Location: list.php'); exit; }
     $action = '';
 }
 
@@ -83,11 +81,8 @@ if ($action == 'update' && $permissiontoadd) {
 // ── VALIDATION ──
 if ($action == 'confirm_validate' && $confirm == 'yes' && $permissiontoadd) {
     $result = $object->validate($user);
-    if ($result > 0) {
-        setEventMessages('Bulletin validé avec succès', null, 'mesgs');
-    } else {
-        setEventMessages($object->error, null, 'errors');
-    }
+    if ($result > 0) { setEventMessages('Bulletin validé avec succès', null, 'mesgs'); }
+    else { setEventMessages($object->error, null, 'errors'); }
     header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id);
     exit;
 }
@@ -95,9 +90,7 @@ if ($action == 'confirm_validate' && $confirm == 'yes' && $permissiontoadd) {
 // ── REMETTRE EN BROUILLON ──
 if ($action == 'confirm_setdraft' && $confirm == 'yes' && $permissiontoadd) {
     $result = $object->setDraft($user);
-    if ($result > 0) {
-        setEventMessages('Bulletin remis en brouillon', null, 'mesgs');
-    }
+    if ($result > 0) { setEventMessages('Bulletin remis en brouillon', null, 'mesgs'); }
     header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id);
     exit;
 }
@@ -105,11 +98,7 @@ if ($action == 'confirm_setdraft' && $confirm == 'yes' && $permissiontoadd) {
 // ── SUPPRESSION ──
 if ($action == 'confirm_delete' && $confirm == 'yes' && $permissiontodelete) {
     $result = $object->delete($user);
-    if ($result > 0) {
-        setEventMessages('Bulletin supprimé', null, 'mesgs');
-        header('Location: list.php');
-        exit;
-    }
+    if ($result > 0) { setEventMessages('Bulletin supprimé', null, 'mesgs'); header('Location: list.php'); exit; }
     setEventMessages($object->error, null, 'errors');
 }
 
@@ -140,7 +129,7 @@ llxHeader('', $title, '', '', 0, 0, '', '', '', 'mod-payrollci page-card');
 if ($action == 'create') {
     if (!$permissiontoadd) accessforbidden();
 
-    print load_fiche_titre('Nouveau Bulletin de Paie', '', 'payrollci@payrollci');
+    print load_fiche_titre('Nouveau Bulletin de Paie', '', 'object_payrollci@payrollci');
 
     print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
     print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -167,7 +156,7 @@ elseif ($action == 'edit' && $object->id > 0) {
     }
 
     $head = payrollci_prepare_head($object);
-    print dol_get_fiche_head($head, 'card', 'Bulletin de Paie', -1, 'payrollci@payrollci');
+    print dol_get_fiche_head($head, 'card', 'Bulletin de Paie', -1, 'object_payrollci@payrollci');
 
     print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
     print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -215,7 +204,7 @@ elseif ($object->id > 0) {
     }
 
     $head = payrollci_prepare_head($object);
-    print dol_get_fiche_head($head, 'card', 'Bulletin de Paie', -1, 'payrollci@payrollci');
+    print dol_get_fiche_head($head, 'card', 'Bulletin de Paie', -1, 'object_payrollci@payrollci');
 
     // ── Bandeau principal (standard Dolibarr) ──
     $linkback = '<a href="'.dol_buildpath('/payrollci/list.php', 1).'">'.$langs->trans("BackToList").'</a>';
@@ -223,10 +212,11 @@ elseif ($object->id > 0) {
     $morehtmlref = '<div class="refidno">';
     $morehtmlref .= '<b>'.$object->employee_name.'</b>';
     if ($object->employee_job) $morehtmlref .= ' - '.$object->employee_job;
+    if ($object->is_expatrie) $morehtmlref .= ' <span class="badge badge-warning" title="Salarié expatrié (contribution employeur 12%)">Expatrié</span>';
     if ($object->fk_user > 0) {
         $userstatic = new User($db);
         $userstatic->fetch($object->fk_user);
-        $morehtmlref .= '<br>'.$langs->trans("Employee").': '.$userstatic->getNomUrl(1);
+        $morehtmlref .= '<br>'.img_picto('', 'user', 'class="pictofixedwidth"').$userstatic->getNomUrl(1);
     }
     $morehtmlref .= '</div>';
 
@@ -241,21 +231,31 @@ elseif ($object->id > 0) {
 
     $moisList = payrollci_get_mois();
     $periodeLabel = ($moisList[intval(date('m', $object->date_start))] ?? '').' '.date('Y', $object->date_start);
-    print '<tr><td class="titlefield">Période</td><td>'.$periodeLabel.'</td></tr>';
+    print '<tr><td class="titlefield">'.img_picto('', 'calendar', 'class="pictofixedwidth"').'Période</td><td>'.$periodeLabel.'</td></tr>';
 
-    print '<tr><td>Matricule</td><td>'.$object->matricule.'</td></tr>';
-    print '<tr><td>Cat. / Éch.</td><td>'.$object->employee_category.' / '.$object->employee_echelon.'</td></tr>';
-    print '<tr><td>N° CNPS</td><td>'.$object->numero_cnps.'</td></tr>';
-    print '<tr><td>N° CMU/CNAM</td><td>'.$object->numero_cmu.'</td></tr>';
+    print '<tr><td>'.img_picto('', 'badge', 'class="pictofixedwidth"').'Matricule</td><td>'.$object->matricule.'</td></tr>';
+    print '<tr><td>'.img_picto('', 'category', 'class="pictofixedwidth"').'Cat. / Éch.</td><td>'.$object->employee_category.' / '.$object->employee_echelon.'</td></tr>';
+    print '<tr><td>'.img_picto('', 'security', 'class="pictofixedwidth"').'N° CNPS</td><td>'.$object->numero_cnps.'</td></tr>';
+    print '<tr><td>'.img_picto('', 'health', 'class="pictofixedwidth"').'N° CMU/CNAM</td><td>'.$object->numero_cmu.'</td></tr>';
 
     $sitLabel = PayrollCICalc::getLibelleSituation($object->situation_familiale, $object->nombre_enfants);
-    print '<tr><td>Situation familiale</td><td>'.$sitLabel.' ('.$object->nombre_parts.' parts)</td></tr>';
-    print '<tr><td>Ancienneté</td><td>'.$object->anciennete_mois.' mois</td></tr>';
+    print '<tr><td>'.img_picto('', 'family', 'class="pictofixedwidth"').'Situation familiale</td><td>'.$sitLabel.' ('.$object->nombre_parts.' parts)</td></tr>';
+
+    // V4: Affichage date d'embauche et ancienneté auto-calculée
+    if (!empty($object->date_embauche)) {
+        print '<tr><td>'.img_picto('', 'calendar', 'class="pictofixedwidth"').'Date d\'embauche</td><td>'.dol_print_date($object->date_embauche, 'day').'</td></tr>';
+    }
+    print '<tr><td>'.img_picto('', 'clock', 'class="pictofixedwidth"').'Ancienneté</td><td>'.$object->anciennete_mois.' mois';
+    if ($object->anciennete_mois >= 24) {
+        $tauxAnc = PayrollCICalc::calculerTauxAnciennete($object->anciennete_mois);
+        print ' ('.($tauxAnc * 100).'%)';
+    }
+    print '</td></tr>';
 
     $secteurs = PayrollCICalc::getSecteursActivite();
     $villes = PayrollCICalc::getVilles();
-    print '<tr><td>Secteur d\'activité</td><td>'.($secteurs[$object->secteur_activite]['label'] ?? '').' (AT: '.$object->taux_at.'%)</td></tr>';
-    print '<tr><td>Ville</td><td>'.($villes[$object->ville]['label'] ?? ucfirst($object->ville)).'</td></tr>';
+    print '<tr><td>'.img_picto('', 'company', 'class="pictofixedwidth"').'Secteur d\'activité</td><td>'.($secteurs[$object->secteur_activite]['label'] ?? '').' (AT: '.$object->taux_at.'%)</td></tr>';
+    print '<tr><td>'.img_picto('', 'globe', 'class="pictofixedwidth"').'Ville</td><td>'.($villes[$object->ville]['label'] ?? ucfirst($object->ville)).'</td></tr>';
 
     print '</table>';
     print '</div>'; // fichehalfleft
@@ -265,11 +265,16 @@ elseif ($object->id > 0) {
     print '<table class="border centpercent tableforfield">';
 
     // Montants clés en résumé
-    print '<tr><td class="titlefield">Salaire brut</td><td class="right"><b>'.payrollci_format_amount($object->salaire_brut).' FCFA</b></td></tr>';
+    print '<tr><td class="titlefield">'.img_picto('', 'money-bill-alt', 'class="pictofixedwidth"').'Salaire brut</td><td class="right"><b>'.payrollci_format_amount($object->salaire_brut).' FCFA</b></td></tr>';
     print '<tr><td>Brut imposable</td><td class="right">'.payrollci_format_amount($object->brut_imposable).' FCFA</td></tr>';
     print '<tr><td>CNPS salarié (retraite)</td><td class="right">'.payrollci_format_amount($object->cnps_retraite_sal).' FCFA</td></tr>';
     print '<tr><td>CMU salarié</td><td class="right">'.payrollci_format_amount($object->cmu_sal).' FCFA</td></tr>';
-    print '<tr><td>Total ITS</td><td class="right">'.payrollci_format_amount($object->its_total).' FCFA</td></tr>';
+
+    // V4: ITS détail
+    print '<tr><td>'.img_picto('', 'tax', 'class="pictofixedwidth"').'IBS (Impôt sur le Revenu des Salaires)</td><td class="right">'.payrollci_format_amount($object->its_ibs).' FCFA</td></tr>';
+    print '<tr><td>'.img_picto('', 'receive', 'class="pictofixedwidth"').'RICF (Réduction pour charges de famille)</td><td class="right" style="color:#27ae60;">- '.payrollci_format_amount($object->its_ricf).' FCFA</td></tr>';
+    print '<tr><td><b>Total ITS net</b></td><td class="right"><b>'.payrollci_format_amount($object->its_total).' FCFA</b></td></tr>';
+
     print '<tr><td>Total retenues salariales</td><td class="right">'.payrollci_format_amount($object->total_retenues_sal).' FCFA</td></tr>';
 
     $totalDed = $object->avance_salaire + $object->pret_deduction + $object->pension_alimentaire
@@ -280,7 +285,7 @@ elseif ($object->id > 0) {
 
     print '<tr><td>Total charges patronales</td><td class="right">'.payrollci_format_amount($object->total_charges_pat).' FCFA</td></tr>';
 
-    print '<tr style="background-color:#e8f5e9;"><td><b>NET À PAYER</b></td>';
+    print '<tr style="background-color:#e8f5e9;"><td><b>'.img_picto('', 'money-bill-alt', 'class="pictofixedwidth"').'NET À PAYER</b></td>';
     print '<td class="right" style="font-size:1.2em;color:#27ae60;"><b>'.payrollci_format_amount($object->net_a_payer).' FCFA</b></td></tr>';
 
     $coutTotal = $object->salaire_brut + $object->total_charges_pat;
@@ -315,7 +320,7 @@ elseif ($object->id > 0) {
     };
 
     // ── GAINS ──
-    print '<tr class="liste_titre"><td colspan="5"><b>GAINS / RÉMUNÉRATION</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="5">'.img_picto('', 'money-bill-alt', 'class="pictofixedwidth"').'<b>GAINS / RÉMUNÉRATION</b></td></tr>';
     $showGain('Salaire catégoriel (base)', $object->salaire_base);
     $showGain('Sursalaire', $object->sursalaire);
 
@@ -375,7 +380,7 @@ elseif ($object->id > 0) {
     print '<td class="right">'.payrollci_format_amount($object->brut_imposable).'</td><td></td></tr>';
 
     // ── CNPS ──
-    print '<tr class="liste_titre"><td colspan="5"><b>COTISATIONS SOCIALES (CNPS)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="5">'.img_picto('', 'security', 'class="pictofixedwidth"').'<b>COTISATIONS SOCIALES (CNPS)</b></td></tr>';
     print '<tr class="oddeven"><td>&nbsp;&nbsp;Retraite</td>';
     print '<td class="right">'.payrollci_format_amount(min($object->salaire_brut, PayrollCICalc::CNPS_PLAFOND_RETRAITE)).'</td>';
     print '<td class="right">6,3%/7,7%</td>';
@@ -397,12 +402,14 @@ elseif ($object->id > 0) {
     print '<td class="right">'.payrollci_format_amount($object->cmu_sal).'</td>';
     print '<td class="right">'.payrollci_format_amount($object->cmu_pat).'</td></tr>';
 
-    // ── CHARGES FISCALES PATRONALES ──
-    print '<tr class="liste_titre"><td colspan="5"><b>CHARGES FISCALES PATRONALES</b></td></tr>';
-    print '<tr class="oddeven"><td>&nbsp;&nbsp;Impôt Employeur (IE)</td>';
+    // ── CHARGES FISCALES PATRONALES (V4: Contribution Employeur) ──
+    print '<tr class="liste_titre"><td colspan="5">'.img_picto('', 'company', 'class="pictofixedwidth"').'<b>CHARGES FISCALES PATRONALES</b></td></tr>';
+    $tauxContrib = $object->is_expatrie ? '12,0%' : '2,8%';
+    $labelContrib = $object->is_expatrie ? 'Contribution employeur (expatrié)' : 'Contribution employeur (local)';
+    print '<tr class="oddeven"><td>&nbsp;&nbsp;'.$labelContrib.'</td>';
     print '<td class="right">'.payrollci_format_amount($object->brut_imposable).'</td>';
-    print '<td class="right">1,2%</td><td class="right">-</td>';
-    print '<td class="right">'.payrollci_format_amount($object->impot_employeur).'</td></tr>';
+    print '<td class="right">'.$tauxContrib.'</td><td class="right">-</td>';
+    print '<td class="right">'.payrollci_format_amount($object->contribution_employeur).'</td></tr>';
 
     print '<tr class="oddeven"><td>&nbsp;&nbsp;FDFP/TA</td>';
     print '<td class="right">'.payrollci_format_amount($object->brut_imposable).'</td>';
@@ -414,30 +421,43 @@ elseif ($object->id > 0) {
     print '<td class="right">0,6%</td><td class="right">-</td>';
     print '<td class="right">'.payrollci_format_amount($object->fdfp_fpc).'</td></tr>';
 
-    // ── ITS ──
-    print '<tr class="liste_titre"><td colspan="5"><b>IMPÔTS SUR TRAITEMENTS & SALAIRES (ITS)</b></td></tr>';
-    $baseFiscale = round($object->brut_imposable * 0.80);
-    print '<tr class="oddeven"><td>&nbsp;&nbsp;IS (Impôt sur Salaires)</td>';
-    print '<td class="right">'.payrollci_format_amount($baseFiscale).'</td>';
-    print '<td class="right">1,5%</td>';
-    print '<td class="right">'.payrollci_format_amount($object->its_is).'</td><td></td></tr>';
+    // ── ITS V4 (IBS + RICF) ──
+    print '<tr class="liste_titre"><td colspan="5">'.img_picto('', 'tax', 'class="pictofixedwidth"').'<b>IMPÔTS SUR TRAITEMENTS & SALAIRES (ITS)</b></td></tr>';
+    print '<tr class="oddeven"><td colspan="5" style="color:#555;font-size:0.85em;padding-left:20px;">';
+    print '<em>Ordonnance n° 2023-719 du 13/09/2023 — Barème IBS mensuel (CGI Art. 119 bis)</em></td></tr>';
 
-    print '<tr class="oddeven"><td>&nbsp;&nbsp;CN (Contribution Nationale)</td>';
-    print '<td class="right">'.payrollci_format_amount($baseFiscale).'</td>';
+    // Détail IBS par tranche
+    $detailIBS = PayrollCICalc::getDetailIBS($object->brut_imposable);
+    if (!empty($detailIBS)) {
+        $trancheNum = 0;
+        foreach ($detailIBS as $tranche) {
+            $trancheNum++;
+            if ($tranche['impot'] > 0) {
+                print '<tr class="oddeven"><td>&nbsp;&nbsp;Tranche '.$trancheNum.' (';
+                print payrollci_format_amount($tranche['min']).' - '.($tranche['max'] > 0 ? payrollci_format_amount($tranche['max']) : '...').')</td>';
+                print '<td class="right">'.payrollci_format_amount($tranche['base']).'</td>';
+                print '<td class="right">'.($tranche['taux'] * 100).'%</td>';
+                print '<td class="right">'.payrollci_format_amount($tranche['impot']).'</td><td></td></tr>';
+            }
+        }
+    }
+
+    print '<tr class="oddeven" style="font-weight:bold;"><td>&nbsp;&nbsp;IBS (total brut)</td>';
+    print '<td class="right">'.payrollci_format_amount($object->brut_imposable).'</td>';
     print '<td class="right">Progressif</td>';
-    print '<td class="right">'.payrollci_format_amount($object->its_cn).'</td><td></td></tr>';
+    print '<td class="right">'.payrollci_format_amount($object->its_ibs).'</td><td></td></tr>';
 
-    print '<tr class="oddeven"><td>&nbsp;&nbsp;IGR (Impôt Général sur le Revenu)</td>';
-    print '<td class="right">'.$object->nombre_parts.' parts</td>';
-    print '<td class="right">Progressif</td>';
-    print '<td class="right">'.payrollci_format_amount($object->its_igr).'</td><td></td></tr>';
+    print '<tr class="oddeven" style="color:#27ae60;"><td>&nbsp;&nbsp;RICF (réduction '.$object->nombre_parts.' parts)</td>';
+    print '<td class="right">11 000 x ('.number_format($object->nombre_parts, 1).' - 1)</td>';
+    print '<td class="right">-</td>';
+    print '<td class="right">- '.payrollci_format_amount($object->its_ricf).'</td><td></td></tr>';
 
-    print '<tr class="liste_total"><td><b>TOTAL ITS</b></td><td colspan="2"></td>';
+    print '<tr class="liste_total"><td><b>TOTAL ITS NET</b></td><td colspan="2"></td>';
     print '<td class="right"><b>'.payrollci_format_amount($object->its_total).'</b></td><td></td></tr>';
 
     // ── DÉDUCTIONS ──
     if ($totalDed > 0) {
-        print '<tr class="liste_titre"><td colspan="5"><b>AUTRES DÉDUCTIONS</b></td></tr>';
+        print '<tr class="liste_titre"><td colspan="5">'.img_picto('', 'payment', 'class="pictofixedwidth"').'<b>AUTRES DÉDUCTIONS</b></td></tr>';
         $deds = [
             ['Avance sur salaire', $object->avance_salaire],
             ['Remboursement de prêt', $object->pret_deduction],
@@ -477,41 +497,36 @@ elseif ($object->id > 0) {
     $genallowed = $permissiontoread;
     $delallowed = $permissiontoadd;
 
-    // S'assurer que le répertoire existe pour le PDF
     if (!is_dir($filedir)) dol_mkdir($filedir);
 
-    // Si PDF existe dans l'ancien emplacement, le copier
     $oldpdf = $diroutput.'/'.$object->ref.'.pdf';
     $newpdf = $filedir.'/'.$object->ref.'.pdf';
-    if (file_exists($oldpdf) && !file_exists($newpdf)) {
-        copy($oldpdf, $newpdf);
-    }
+    if (file_exists($oldpdf) && !file_exists($newpdf)) copy($oldpdf, $newpdf);
 
     print $formfile->showdocuments('payrollci', $objref, $filedir, $urlsource, $genallowed, $delallowed, 'pdf_bulletinpaie', 0, 0, 0, 28, 0, '', 0, '', '', '', null);
 
     // ═══════════ BOUTONS D'ACTION ═══════════
     print '<div class="tabsAction">';
     if ($object->status == Payslip::STATUS_DRAFT && $permissiontoadd) {
-        print '<a class="butAction" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=edit&token='.newToken().'">Modifier</a>';
-        print '<a class="butAction" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=validate&token='.newToken().'">Valider</a>';
+        print dolGetButtonAction('', 'Modifier', 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=edit&token='.newToken(), '');
+        print dolGetButtonAction('', 'Valider', 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=validate&token='.newToken(), '');
     }
     if ($object->status == Payslip::STATUS_VALIDATED && $permissiontoadd) {
-        print '<a class="butAction" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=setdraft&token='.newToken().'">Remettre en brouillon</a>';
+        print dolGetButtonAction('', 'Remettre en brouillon', 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=setdraft&token='.newToken(), '');
     }
-    print '<a class="butAction" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=builddoc&token='.newToken().'">Générer PDF</a>';
+    print dolGetButtonAction('', 'Générer PDF', 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=builddoc&token='.newToken(), '');
 
     if ($permissiontodelete && $object->status == Payslip::STATUS_DRAFT) {
-        print '<a class="butActionDelete" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=delete&token='.newToken().'">Supprimer</a>';
+        print dolGetButtonAction('', 'Supprimer', 'delete', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=delete&token='.newToken(), '');
     }
     print '</div>';
 
-    // ── Informations système (créé par, modifié le...) ──
+    // ── Informations système ──
     print '<div class="fichecenter"><div class="fichehalfleft">';
     $object->info($object->id);
     print '</div></div>';
 }
 
-// Aucun objet et pas de creation
 else {
     header('Location: list.php');
     exit;
@@ -536,20 +551,33 @@ function _readFormData(&$object, $db, $conf)
     $object->numero_cnps        = GETPOST('numero_cnps', 'alpha');
     $object->numero_cmu         = GETPOST('numero_cmu', 'alpha');
     $object->matricule          = GETPOST('matricule', 'alpha');
+    $object->is_expatrie        = GETPOST('is_expatrie', 'int') ? 1 : 0;
 
     $mois  = GETPOST('date_startmonth', 'int');
     $annee = GETPOST('date_startyear', 'int');
     $object->date_start = dol_mktime(0, 0, 0, $mois, 1, $annee);
     $object->date_end   = dol_mktime(0, 0, 0, $mois, date('t', mktime(0, 0, 0, $mois, 1, $annee)), $annee);
 
+    // V4: Date d'embauche
+    $embDay   = GETPOST('date_embaucheday', 'int');
+    $embMonth = GETPOST('date_embauchemonth', 'int');
+    $embYear  = GETPOST('date_embaucheyear', 'int');
+    if ($embDay > 0 && $embMonth > 0 && $embYear > 0) {
+        $object->date_embauche = dol_mktime(0, 0, 0, $embMonth, $embDay, $embYear);
+    }
+
     $object->situation_familiale = GETPOST('situation_familiale', 'alpha');
     $object->nombre_enfants     = GETPOST('nombre_enfants', 'int');
     $object->secteur_activite   = GETPOST('secteur_activite', 'alpha');
     $object->ville              = GETPOST('ville', 'alpha');
-    $object->anciennete_mois    = GETPOST('anciennete_mois', 'int');
 
     $secteurs = PayrollCICalc::getSecteursActivite();
     $object->taux_at = $secteurs[$object->secteur_activite]['taux'] ?? 2.0;
+
+    // Liens optionnels
+    $object->fk_soc     = GETPOST('fk_soc', 'int') ?: null;
+    $object->fk_project = GETPOST('fk_project', 'int') ?: null;
+    $object->fk_contrat = GETPOST('fk_contrat', 'int') ?: null;
 
     // Tous les champs numériques
     $numFields = [
@@ -570,18 +598,11 @@ function _readFormData(&$object, $db, $conf)
         $object->$f = price2num(GETPOST($f, 'alpha'));
     }
 
-    // Auto-calcul ancienneté
-    if ($object->anciennete_mois > 0 && $object->prime_anciennete == 0) {
-        $object->prime_anciennete = PayrollCICalc::calculerPrimeAnciennete(
-            $object->salaire_base, $object->anciennete_mois
-        );
-    }
-
     // Notes
     $object->note_public  = GETPOST('note_public', 'restricthtml');
     $object->note_private = GETPOST('note_private', 'restricthtml');
 
-    // Auto-fill depuis utilisateur Dolibarr si le nom est vide
+    // Auto-fill depuis utilisateur Dolibarr
     if (empty($object->employee_name) && $object->fk_user > 0) {
         $object->fetchUserInfo();
     }
@@ -595,7 +616,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     print '<table class="border centpercent tableforfieldcreate">';
 
     // ──── INFORMATIONS EMPLOYÉ ────
-    print '<tr class="liste_titre"><td colspan="4"><b>INFORMATIONS EMPLOYÉ</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'user', 'class="pictofixedwidth"').'<b>INFORMATIONS EMPLOYÉ</b></td></tr>';
 
     print '<tr><td class="titlefieldcreate fieldrequired">Employé Dolibarr</td>';
     print '<td colspan="3">'.$form->select_dolusers($object->fk_user ?? '', 'fk_user', 1, null, 0, '', '', 0, 0, 0, '', 0, '', 'maxwidth400');
@@ -617,8 +638,15 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     print '<td>N° CMU/CNAM</td>';
     print '<td><input type="text" name="numero_cmu" value="'.dol_escape_htmltag($object->numero_cmu).'" size="20"></td></tr>';
 
+    // V4: Expatrié
+    $chkExp = (!empty($object->is_expatrie)) ? ' checked' : '';
+    print '<tr><td>Salarié expatrié</td>';
+    print '<td><input type="checkbox" name="is_expatrie" value="1"'.$chkExp.'>';
+    print ' <em style="color:#888;font-size:0.9em">Contribution employeur à 12% au lieu de 2,8%</em></td>';
+    print '<td></td><td></td></tr>';
+
     // ──── SITUATION FAMILIALE ────
-    print '<tr class="liste_titre"><td colspan="4"><b>SITUATION FAMILIALE (calcul IGR)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'family', 'class="pictofixedwidth"').'<b>SITUATION FAMILIALE (calcul RICF)</b></td></tr>';
     $situations = payrollci_get_situations();
     print '<tr><td>Situation</td><td><select name="situation_familiale" class="flat">';
     foreach ($situations as $k => $v) {
@@ -630,7 +658,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     print '<td><input type="number" name="nombre_enfants" value="'.($object->nombre_enfants ?? 0).'" min="0" max="10" class="flat" size="5"></td></tr>';
 
     // ──── PÉRIODE & PARAMÈTRES ────
-    print '<tr class="liste_titre"><td colspan="4"><b>PÉRIODE & PARAMÈTRES</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'calendar', 'class="pictofixedwidth"').'<b>PÉRIODE & PARAMÈTRES</b></td></tr>';
     $moisList = payrollci_get_mois();
     $curMonth = $object->date_start ? intval(date('m', $object->date_start)) : intval(date('n'));
     $curYear  = $object->date_start ? intval(date('Y', $object->date_start)) : intval(date('Y'));
@@ -643,12 +671,17 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     }
     print '</select> <input type="number" name="date_startyear" value="'.$curYear.'" min="2020" max="2035" size="6" class="flat">';
     print '</td>';
-    print '<td>Ancienneté (mois)</td>';
-    print '<td><input type="number" name="anciennete_mois" value="'.($object->anciennete_mois ?? 0).'" min="0" max="600" class="flat" size="5"> <em style="color:#888">auto-calcul prime si &gt; 24</em></td></tr>';
+
+    // V4: Date d'embauche (remplace ancienneté manuelle)
+    print '<td class="fieldrequired">Date d\'embauche</td>';
+    print '<td>';
+    print $form->selectDate($object->date_embauche ?? -1, 'date_embauche', 0, 0, 1, '', 1, 1);
+    print ' <em style="color:#888;font-size:0.9em">'.img_picto('', 'info', 'class="pictofixedwidth"').'Ancienneté et prime auto-calculées</em>';
+    print '</td></tr>';
 
     // Secteur et ville
     $secteurs = PayrollCICalc::getSecteursActivite();
-    $defSec = $object->secteur_activite ?? ($conf->global->PAYROLLCI_DEFAULT_SECTEUR ?? 'commerce');
+    $defSec = $object->secteur_activite ?? (getDolGlobalString('PAYROLLCI_DEFAULT_SECTEUR', 'commerce'));
     print '<tr><td>Secteur d\'activité</td><td>';
     print '<select name="secteur_activite" class="flat">';
     foreach ($secteurs as $k => $s) {
@@ -658,7 +691,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     print '</select></td>';
 
     $villes = PayrollCICalc::getVilles();
-    $defVille = $object->ville ?? ($conf->global->PAYROLLCI_DEFAULT_VILLE ?? 'abidjan');
+    $defVille = $object->ville ?? (getDolGlobalString('PAYROLLCI_DEFAULT_VILLE', 'abidjan'));
     print '<td>Ville</td><td>';
     print '<select name="ville" class="flat">';
     foreach ($villes as $k => $v) {
@@ -677,13 +710,14 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     };
 
     // ──── SALAIRE DE BASE ────
-    print '<tr class="liste_titre"><td colspan="4"><b>SALAIRE DE BASE (FCFA)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'money-bill-alt', 'class="pictofixedwidth"').'<b>SALAIRE DE BASE (FCFA)</b></td></tr>';
     print '<tr>'.$field('salaire_base', 'Salaire catégoriel *', true).$field('sursalaire', 'Sursalaire').'</tr>';
 
     // ──── PRIMES CCI ────
-    print '<tr class="liste_titre"><td colspan="4"><b>PRIMES (Convention Collective CI)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'star', 'class="pictofixedwidth"').'<b>PRIMES (Convention Collective CI)</b></td></tr>';
+    print '<tr><td colspan="4" style="color:#555;font-size:0.9em;padding-left:20px;"><em>'.img_picto('', 'info', 'class="pictofixedwidth"').'La prime d\'ancienneté est auto-calculée à partir de la date d\'embauche (2% après 24 mois, +1%/an, max 25%)</em></td></tr>';
     $champsPrimes = [
-        ['prime_anciennete', 'Prime d\'ancienneté'], ['prime_rendement', 'Prime de rendement'],
+        ['prime_anciennete', 'Prime d\'ancienneté (auto)'], ['prime_rendement', 'Prime de rendement'],
         ['prime_technicite', 'Prime de technicité'], ['prime_fonction', 'Prime de fonction'],
         ['prime_responsabilite', 'Prime de responsabilité'], ['prime_risque', 'Prime de risque/danger'],
         ['prime_outillage', 'Prime d\'outillage'], ['prime_salissure', 'Prime de salissure'],
@@ -698,7 +732,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     }
 
     // ──── INDEMNITÉS ────
-    print '<tr class="liste_titre"><td colspan="4"><b>INDEMNITÉS (FCFA)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'receive', 'class="pictofixedwidth"').'<b>INDEMNITÉS (FCFA)</b></td></tr>';
     $champsIndem = [
         ['indemnite_transport', 'Indemnité de transport'], ['indemnite_logement', 'Indemnité de logement'],
         ['indemnite_representation', 'Indemnité de représentation'], ['indemnite_expatriation', 'Indemnité d\'expatriation'],
@@ -711,7 +745,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     }
 
     // ──── AVANTAGES EN NATURE ────
-    print '<tr class="liste_titre"><td colspan="4"><b>AVANTAGES EN NATURE (FCFA)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'resource', 'class="pictofixedwidth"').'<b>AVANTAGES EN NATURE (FCFA)</b></td></tr>';
     $champsAN = [
         ['avantage_nature_logement', 'Logement'], ['avantage_nature_vehicule', 'Véhicule'],
         ['avantage_nature_domestique', 'Personnel domestique'], ['avantage_nature_nourriture', 'Nourriture'],
@@ -725,8 +759,8 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     }
 
     // ──── HEURES SUPPLÉMENTAIRES ────
-    print '<tr class="liste_titre"><td colspan="4"><b>HEURES SUPPLÉMENTAIRES (FCFA)</b></td></tr>';
-    print '<tr><td colspan="4" style="color:#666;font-size:0.9em;"><em>15% = 41è-46è h | 50% = >46h | 75% = nuit/dim | 100% = nuit+dim</em></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'clock', 'class="pictofixedwidth"').'<b>HEURES SUPPLÉMENTAIRES (FCFA)</b></td></tr>';
+    print '<tr><td colspan="4" style="color:#666;font-size:0.9em;padding-left:20px;"><em>15% = 41è-46è h | 50% = >46h | 75% = nuit/dim | 100% = nuit+dim</em></td></tr>';
     $champsHS = [
         ['heures_sup_15', 'HS 15%'], ['heures_sup_50', 'HS 50%'],
         ['heures_sup_75', 'HS 75%'], ['heures_sup_100', 'HS 100%'],
@@ -735,11 +769,11 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     print '<tr>'.$field($champsHS[2][0], $champsHS[2][1]).$field($champsHS[3][0], $champsHS[3][1]).'</tr>';
 
     // ──── AUTRES GAINS ────
-    print '<tr class="liste_titre"><td colspan="4"><b>AUTRES GAINS (FCFA)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'payment', 'class="pictofixedwidth"').'<b>AUTRES GAINS (FCFA)</b></td></tr>';
     print '<tr>'.$field('conges_payes', 'Congés payés').$field('autres_primes', 'Autres primes').'</tr>';
 
     // ──── DÉDUCTIONS ────
-    print '<tr class="liste_titre"><td colspan="4"><b>DÉDUCTIONS (FCFA)</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'generic', 'class="pictofixedwidth"').'<b>DÉDUCTIONS (FCFA)</b></td></tr>';
     $champsDed = [
         ['avance_salaire', 'Avance sur salaire'], ['pret_deduction', 'Remboursement de prêt'],
         ['pension_alimentaire', 'Pension alimentaire'], ['saisie_arret', 'Saisie-arrêt'],
@@ -752,7 +786,7 @@ function _printFormFields($object, $form, $conf, $mode = 'create')
     }
 
     // ──── NOTES ────
-    print '<tr class="liste_titre"><td colspan="4"><b>NOTES</b></td></tr>';
+    print '<tr class="liste_titre"><td colspan="4">'.img_picto('', 'note', 'class="pictofixedwidth"').'<b>NOTES</b></td></tr>';
     print '<tr><td>Note publique</td><td colspan="3">';
     print '<textarea name="note_public" rows="3" class="flat quatrevingtpercent">'
         .dol_escape_htmltag($object->note_public ?? '').'</textarea></td></tr>';
