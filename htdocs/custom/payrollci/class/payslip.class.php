@@ -1,7 +1,7 @@
 <?php
 /* ============================================================================
- * PayrollCI - Classe métier Bulletin de Paie
- * Gestion CRUD et calcul des bulletins de paie
+ * PayrollCI v2 - Classe métier Bulletin de Paie (complète)
+ * Gestion CRUD avec tous les éléments de rémunération ivoiriens
  * ============================================================================
  */
 
@@ -26,6 +26,7 @@ class Payslip extends CommonObject
     public $employee_echelon;
     public $numero_cnps;
     public $numero_cmu;
+    public $matricule;
 
     // Période
     public $date_start;
@@ -36,26 +37,68 @@ class Payslip extends CommonObject
     public $nombre_enfants = 0;
     public $nombre_parts = 1.0;
 
-    // Éléments de rémunération
+    // Salaire de base
     public $salaire_base = 0;
-    public $prime_anciennete = 0;
-    public $prime_transport = 0;
-    public $prime_logement = 0;
-    public $prime_responsabilite = 0;
-    public $prime_salissure = 0;
-    public $heures_sup_25 = 0;
-    public $heures_sup_50 = 0;
-    public $autres_primes = 0;
-    public $conges_payes = 0;
-    public $salaire_brut = 0;
+    public $sursalaire = 0;
 
-    // CNPS
+    // Primes CCI
+    public $prime_anciennete = 0;
+    public $prime_rendement = 0;
+    public $prime_technicite = 0;
+    public $prime_fonction = 0;
+    public $prime_responsabilite = 0;
+    public $prime_risque = 0;
+    public $prime_outillage = 0;
+    public $prime_salissure = 0;
+    public $prime_caisse = 0;
+    public $prime_assiduite = 0;
+    public $prime_panier = 0;
+    public $gratification = 0;
+
+    // Indemnités
+    public $indemnite_transport = 0;
+    public $transport_non_imposable = 0;
+    public $indemnite_logement = 0;
+    public $indemnite_representation = 0;
+    public $indemnite_expatriation = 0;
+    public $indemnite_deplacement = 0;
+    public $indemnite_kilometrique = 0;
+
+    // Avantages en nature
+    public $avantage_nature_logement = 0;
+    public $avantage_nature_vehicule = 0;
+    public $avantage_nature_domestique = 0;
+    public $avantage_nature_nourriture = 0;
+    public $avantage_nature_autres = 0;
+
+    // Heures supplémentaires
+    public $heures_sup_15 = 0;
+    public $heures_sup_50 = 0;
+    public $heures_sup_75 = 0;
+    public $heures_sup_100 = 0;
+
+    // Autres gains
+    public $conges_payes = 0;
+    public $autres_primes = 0;
+
+    // Totaux bruts
+    public $salaire_brut = 0;
+    public $brut_imposable = 0;
+
+    // CNPS salarié
     public $cnps_retraite_sal = 0;
     public $cmu_sal = 0;
+
+    // CNPS patronal
     public $cnps_retraite_pat = 0;
     public $cnps_pf_pat = 0;
     public $cnps_at_pat = 0;
     public $cmu_pat = 0;
+
+    // Charges fiscales patronales
+    public $impot_employeur = 0;
+    public $fdfp_ta = 0;
+    public $fdfp_fpc = 0;
 
     // ITS
     public $its_is = 0;
@@ -65,41 +108,70 @@ class Payslip extends CommonObject
 
     // Totaux
     public $total_retenues_sal = 0;
+    public $total_charges_sociales = 0;
+    public $total_charges_fiscales = 0;
     public $total_charges_pat = 0;
     public $salaire_net_imposable = 0;
     public $salaire_net = 0;
 
-    // Avances
+    // Déductions
     public $avance_salaire = 0;
     public $pret_deduction = 0;
+    public $pension_alimentaire = 0;
+    public $saisie_arret = 0;
+    public $mutuelle_complementaire = 0;
     public $autres_retenues = 0;
     public $net_a_payer = 0;
 
-    // Secteur
+    // Paramètres
     public $secteur_activite = 'commerce';
     public $taux_at = 2.00;
+    public $ville = 'abidjan';
+    public $anciennete_mois = 0;
 
     // Statut
     public $status = 0;
 
     /**
-     * @var array Champs de la table
+     * Liste de tous les champs numériques de rémunération (pour boucles)
      */
+    private static $allNumericFields = [
+        'salaire_base', 'sursalaire',
+        'prime_anciennete', 'prime_rendement', 'prime_technicite',
+        'prime_fonction', 'prime_responsabilite', 'prime_risque',
+        'prime_outillage', 'prime_salissure', 'prime_caisse',
+        'prime_assiduite', 'prime_panier', 'gratification',
+        'indemnite_transport', 'transport_non_imposable',
+        'indemnite_logement', 'indemnite_representation',
+        'indemnite_expatriation', 'indemnite_deplacement', 'indemnite_kilometrique',
+        'avantage_nature_logement', 'avantage_nature_vehicule',
+        'avantage_nature_domestique', 'avantage_nature_nourriture', 'avantage_nature_autres',
+        'heures_sup_15', 'heures_sup_50', 'heures_sup_75', 'heures_sup_100',
+        'conges_payes', 'autres_primes',
+        'salaire_brut', 'brut_imposable',
+        'cnps_retraite_sal', 'cmu_sal',
+        'cnps_retraite_pat', 'cnps_pf_pat', 'cnps_at_pat', 'cmu_pat',
+        'impot_employeur', 'fdfp_ta', 'fdfp_fpc',
+        'its_is', 'its_cn', 'its_igr', 'its_total',
+        'total_retenues_sal', 'total_charges_sociales', 'total_charges_fiscales',
+        'total_charges_pat', 'salaire_net_imposable', 'salaire_net',
+        'avance_salaire', 'pret_deduction', 'pension_alimentaire',
+        'saisie_arret', 'mutuelle_complementaire', 'autres_retenues',
+        'net_a_payer',
+    ];
+
     public $fields = array(
-        'rowid'          => array('type' => 'integer', 'label' => 'TechnicalID', 'enabled' => 1, 'position' => 1, 'notnull' => 1, 'visible' => 0),
-        'ref'            => array('type' => 'varchar(128)', 'label' => 'Ref', 'enabled' => 1, 'position' => 10, 'notnull' => 1, 'visible' => 4, 'showoncombobox' => 1),
-        'fk_user'        => array('type' => 'integer:User:user/class/user.class.php', 'label' => 'Employee', 'enabled' => 1, 'position' => 20, 'notnull' => 1, 'visible' => 1),
-        'date_start'     => array('type' => 'date', 'label' => 'DateStart', 'enabled' => 1, 'position' => 30, 'notnull' => 1, 'visible' => 1),
-        'date_end'       => array('type' => 'date', 'label' => 'DateEnd', 'enabled' => 1, 'position' => 40, 'notnull' => 1, 'visible' => 1),
-        'salaire_brut'   => array('type' => 'price', 'label' => 'SalaireBrut', 'enabled' => 1, 'position' => 50, 'visible' => 1),
-        'salaire_net'    => array('type' => 'price', 'label' => 'SalaireNet', 'enabled' => 1, 'position' => 60, 'visible' => 1),
-        'net_a_payer'    => array('type' => 'price', 'label' => 'NetAPayer', 'enabled' => 1, 'position' => 70, 'visible' => 1),
-        'status'         => array('type' => 'integer', 'label' => 'Status', 'enabled' => 1, 'position' => 80, 'visible' => 2),
+        'rowid'        => array('type' => 'integer', 'label' => 'TechnicalID', 'enabled' => 1, 'position' => 1, 'notnull' => 1, 'visible' => 0),
+        'ref'          => array('type' => 'varchar(128)', 'label' => 'Ref', 'enabled' => 1, 'position' => 10, 'notnull' => 1, 'visible' => 4),
+        'fk_user'      => array('type' => 'integer:User:user/class/user.class.php', 'label' => 'Employee', 'enabled' => 1, 'position' => 20, 'notnull' => 1, 'visible' => 1),
+        'date_start'   => array('type' => 'date', 'label' => 'DateStart', 'enabled' => 1, 'position' => 30, 'notnull' => 1, 'visible' => 1),
+        'date_end'     => array('type' => 'date', 'label' => 'DateEnd', 'enabled' => 1, 'position' => 40, 'notnull' => 1, 'visible' => 1),
+        'salaire_brut' => array('type' => 'price', 'label' => 'SalaireBrut', 'enabled' => 1, 'position' => 50, 'visible' => 1),
+        'salaire_net'  => array('type' => 'price', 'label' => 'SalaireNet', 'enabled' => 1, 'position' => 60, 'visible' => 1),
+        'net_a_payer'  => array('type' => 'price', 'label' => 'NetAPayer', 'enabled' => 1, 'position' => 70, 'visible' => 1),
+        'status'       => array('type' => 'integer', 'label' => 'Status', 'enabled' => 1, 'position' => 80, 'visible' => 2),
     );
 
-    /**
-     * Constructor
-     */
     public function __construct($db)
     {
         global $langs;
@@ -113,72 +185,59 @@ class Payslip extends CommonObject
     {
         $this->ref = $this->getNextNumRef();
 
+        $fields = [
+            'ref', 'entity', 'fk_user', 'employee_name', 'employee_job',
+            'employee_category', 'employee_echelon', 'numero_cnps', 'numero_cmu', 'matricule',
+            'date_start', 'date_end', 'date_creation',
+            'situation_familiale', 'nombre_enfants', 'nombre_parts',
+        ];
+        $values = [
+            "'".$this->db->escape($this->ref)."'",
+            ((int) ($this->entity ?? 1)),
+            ((int) $this->fk_user),
+            "'".$this->db->escape($this->employee_name)."'",
+            "'".$this->db->escape($this->employee_job)."'",
+            "'".$this->db->escape($this->employee_category)."'",
+            "'".$this->db->escape($this->employee_echelon)."'",
+            "'".$this->db->escape($this->numero_cnps)."'",
+            "'".$this->db->escape($this->numero_cmu)."'",
+            "'".$this->db->escape($this->matricule)."'",
+            "'".$this->db->idate($this->date_start)."'",
+            "'".$this->db->idate($this->date_end)."'",
+            "'".$this->db->idate(dol_now())."'",
+            "'".$this->db->escape($this->situation_familiale)."'",
+            ((int) $this->nombre_enfants),
+            ((float) $this->nombre_parts),
+        ];
+
+        // Tous les champs numériques
+        foreach (self::$allNumericFields as $f) {
+            $fields[] = $f;
+            $values[] = ((float) ($this->$f ?? 0));
+        }
+
+        // Paramètres
+        foreach (['secteur_activite', 'ville'] as $f) {
+            $fields[] = $f;
+            $values[] = "'".$this->db->escape($this->$f)."'";
+        }
+        $fields[] = 'taux_at';
+        $values[] = ((float) $this->taux_at);
+        $fields[] = 'anciennete_mois';
+        $values[] = ((int) $this->anciennete_mois);
+        $fields[] = 'status';
+        $values[] = ((int) $this->status);
+        $fields[] = 'fk_user_creat';
+        $values[] = ((int) $user->id);
+
         $sql = "INSERT INTO ".MAIN_DB_PREFIX.$this->table_element." (";
-        $sql .= "ref, entity, fk_user, employee_name, employee_job, employee_category, employee_echelon,";
-        $sql .= "numero_cnps, numero_cmu, date_start, date_end, date_creation,";
-        $sql .= "situation_familiale, nombre_enfants, nombre_parts,";
-        $sql .= "salaire_base, prime_anciennete, prime_transport, prime_logement,";
-        $sql .= "prime_responsabilite, prime_salissure, heures_sup_25, heures_sup_50,";
-        $sql .= "autres_primes, conges_payes, salaire_brut,";
-        $sql .= "cnps_retraite_sal, cmu_sal, cnps_retraite_pat, cnps_pf_pat, cnps_at_pat, cmu_pat,";
-        $sql .= "its_is, its_cn, its_igr, its_total,";
-        $sql .= "total_retenues_sal, total_charges_pat, salaire_net_imposable, salaire_net,";
-        $sql .= "avance_salaire, pret_deduction, autres_retenues, net_a_payer,";
-        $sql .= "secteur_activite, taux_at, status, fk_user_creat";
+        $sql .= implode(', ', $fields);
         $sql .= ") VALUES (";
-        $sql .= "'".$this->db->escape($this->ref)."'";
-        $sql .= ", ".((int) $this->entity);
-        $sql .= ", ".((int) $this->fk_user);
-        $sql .= ", '".$this->db->escape($this->employee_name)."'";
-        $sql .= ", '".$this->db->escape($this->employee_job)."'";
-        $sql .= ", '".$this->db->escape($this->employee_category)."'";
-        $sql .= ", '".$this->db->escape($this->employee_echelon)."'";
-        $sql .= ", '".$this->db->escape($this->numero_cnps)."'";
-        $sql .= ", '".$this->db->escape($this->numero_cmu)."'";
-        $sql .= ", '".$this->db->idate($this->date_start)."'";
-        $sql .= ", '".$this->db->idate($this->date_end)."'";
-        $sql .= ", '".$this->db->idate(dol_now())."'";
-        $sql .= ", '".$this->db->escape($this->situation_familiale)."'";
-        $sql .= ", ".((int) $this->nombre_enfants);
-        $sql .= ", ".((float) $this->nombre_parts);
-        $sql .= ", ".((float) $this->salaire_base);
-        $sql .= ", ".((float) $this->prime_anciennete);
-        $sql .= ", ".((float) $this->prime_transport);
-        $sql .= ", ".((float) $this->prime_logement);
-        $sql .= ", ".((float) $this->prime_responsabilite);
-        $sql .= ", ".((float) $this->prime_salissure);
-        $sql .= ", ".((float) $this->heures_sup_25);
-        $sql .= ", ".((float) $this->heures_sup_50);
-        $sql .= ", ".((float) $this->autres_primes);
-        $sql .= ", ".((float) $this->conges_payes);
-        $sql .= ", ".((float) $this->salaire_brut);
-        $sql .= ", ".((float) $this->cnps_retraite_sal);
-        $sql .= ", ".((float) $this->cmu_sal);
-        $sql .= ", ".((float) $this->cnps_retraite_pat);
-        $sql .= ", ".((float) $this->cnps_pf_pat);
-        $sql .= ", ".((float) $this->cnps_at_pat);
-        $sql .= ", ".((float) $this->cmu_pat);
-        $sql .= ", ".((float) $this->its_is);
-        $sql .= ", ".((float) $this->its_cn);
-        $sql .= ", ".((float) $this->its_igr);
-        $sql .= ", ".((float) $this->its_total);
-        $sql .= ", ".((float) $this->total_retenues_sal);
-        $sql .= ", ".((float) $this->total_charges_pat);
-        $sql .= ", ".((float) $this->salaire_net_imposable);
-        $sql .= ", ".((float) $this->salaire_net);
-        $sql .= ", ".((float) $this->avance_salaire);
-        $sql .= ", ".((float) $this->pret_deduction);
-        $sql .= ", ".((float) $this->autres_retenues);
-        $sql .= ", ".((float) $this->net_a_payer);
-        $sql .= ", '".$this->db->escape($this->secteur_activite)."'";
-        $sql .= ", ".((float) $this->taux_at);
-        $sql .= ", ".((int) $this->status);
-        $sql .= ", ".((int) $user->id);
+        $sql .= implode(', ', $values);
         $sql .= ")";
 
         $this->db->begin();
         $resql = $this->db->query($sql);
-
         if ($resql) {
             $this->id = $this->db->last_insert_id(MAIN_DB_PREFIX.$this->table_element);
             $this->db->commit();
@@ -216,43 +275,23 @@ class Payslip extends CommonObject
                 $this->employee_echelon = $obj->employee_echelon;
                 $this->numero_cnps = $obj->numero_cnps;
                 $this->numero_cmu = $obj->numero_cmu;
+                $this->matricule = $obj->matricule;
                 $this->date_start = $this->db->jdate($obj->date_start);
                 $this->date_end = $this->db->jdate($obj->date_end);
                 $this->date_creation = $this->db->jdate($obj->date_creation);
                 $this->situation_familiale = $obj->situation_familiale;
                 $this->nombre_enfants = $obj->nombre_enfants;
                 $this->nombre_parts = $obj->nombre_parts;
-                $this->salaire_base = $obj->salaire_base;
-                $this->prime_anciennete = $obj->prime_anciennete;
-                $this->prime_transport = $obj->prime_transport;
-                $this->prime_logement = $obj->prime_logement;
-                $this->prime_responsabilite = $obj->prime_responsabilite;
-                $this->prime_salissure = $obj->prime_salissure;
-                $this->heures_sup_25 = $obj->heures_sup_25;
-                $this->heures_sup_50 = $obj->heures_sup_50;
-                $this->autres_primes = $obj->autres_primes;
-                $this->conges_payes = $obj->conges_payes;
-                $this->salaire_brut = $obj->salaire_brut;
-                $this->cnps_retraite_sal = $obj->cnps_retraite_sal;
-                $this->cmu_sal = $obj->cmu_sal;
-                $this->cnps_retraite_pat = $obj->cnps_retraite_pat;
-                $this->cnps_pf_pat = $obj->cnps_pf_pat;
-                $this->cnps_at_pat = $obj->cnps_at_pat;
-                $this->cmu_pat = $obj->cmu_pat;
-                $this->its_is = $obj->its_is;
-                $this->its_cn = $obj->its_cn;
-                $this->its_igr = $obj->its_igr;
-                $this->its_total = $obj->its_total;
-                $this->total_retenues_sal = $obj->total_retenues_sal;
-                $this->total_charges_pat = $obj->total_charges_pat;
-                $this->salaire_net_imposable = $obj->salaire_net_imposable;
-                $this->salaire_net = $obj->salaire_net;
-                $this->avance_salaire = $obj->avance_salaire;
-                $this->pret_deduction = $obj->pret_deduction;
-                $this->autres_retenues = $obj->autres_retenues;
-                $this->net_a_payer = $obj->net_a_payer;
+
+                // Tous les champs numériques
+                foreach (self::$allNumericFields as $f) {
+                    if (isset($obj->$f)) $this->$f = $obj->$f;
+                }
+
                 $this->secteur_activite = $obj->secteur_activite;
                 $this->taux_at = $obj->taux_at;
+                $this->ville = $obj->ville;
+                $this->anciennete_mois = $obj->anciennete_mois;
                 $this->status = $obj->status;
                 $this->fk_user_creat = $obj->fk_user_creat;
                 return 1;
@@ -268,24 +307,15 @@ class Payslip extends CommonObject
      */
     public function calculate()
     {
-        $params = [
-            'salaire_base'         => $this->salaire_base,
-            'prime_anciennete'     => $this->prime_anciennete,
-            'prime_transport'      => $this->prime_transport,
-            'prime_logement'       => $this->prime_logement,
-            'prime_responsabilite' => $this->prime_responsabilite,
-            'prime_salissure'      => $this->prime_salissure,
-            'heures_sup_25'        => $this->heures_sup_25,
-            'heures_sup_50'        => $this->heures_sup_50,
-            'autres_primes'        => $this->autres_primes,
-            'conges_payes'         => $this->conges_payes,
-            'situation_familiale'  => $this->situation_familiale,
-            'nombre_enfants'       => $this->nombre_enfants,
-            'taux_at'              => $this->taux_at / 100,
-            'avance_salaire'       => $this->avance_salaire,
-            'pret_deduction'       => $this->pret_deduction,
-            'autres_retenues'      => $this->autres_retenues,
-        ];
+        // Collecter tous les paramètres
+        $params = [];
+        foreach (self::$allNumericFields as $f) {
+            $params[$f] = $this->$f;
+        }
+        $params['situation_familiale'] = $this->situation_familiale;
+        $params['nombre_enfants'] = $this->nombre_enfants;
+        $params['taux_at'] = $this->taux_at / 100;
+        $params['ville'] = $this->ville;
 
         $result = PayrollCICalc::calculerBulletin($params);
 
@@ -315,14 +345,13 @@ class Payslip extends CommonObject
     }
 
     /**
-     * Générer la référence suivante
+     * Référence suivante
      */
     public function getNextNumRef()
     {
         $sql = "SELECT MAX(CAST(SUBSTRING(ref, 5) AS UNSIGNED)) as maxref";
         $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
         $sql .= " WHERE ref LIKE 'BP-%'";
-
         $resql = $this->db->query($sql);
         if ($resql) {
             $obj = $this->db->fetch_object($resql);
@@ -332,17 +361,7 @@ class Payslip extends CommonObject
         return 'BP-000001';
     }
 
-    /**
-     * Retourner le libellé du statut
-     */
-    public function getLibStatut($mode = 0)
-    {
-        return $this->LibStatut($this->status, $mode);
-    }
-
-    /**
-     * Libellé statut
-     */
+    public function getLibStatut($mode = 0) { return self::LibStatut($this->status, $mode); }
     public static function LibStatut($status, $mode = 0)
     {
         if ($status == self::STATUS_DRAFT) return 'Brouillon';
@@ -350,16 +369,9 @@ class Payslip extends CommonObject
         return 'Inconnu';
     }
 
-    /**
-     * Retourner lien cliquable
-     */
     public function getNomUrl($withpicto = 0, $notooltip = 0)
     {
         $url = dol_buildpath('/payrollci/card.php', 1).'?id='.$this->id;
-        $label = '<u>Bulletin de Paie</u><br><b>Réf:</b> '.$this->ref;
-        $link = '<a href="'.$url.'" title="'.dol_escape_htmltag($label).'">';
-        $linkend = '</a>';
-        $result = $link.$this->ref.$linkend;
-        return $result;
+        return '<a href="'.$url.'">'.$this->ref.'</a>';
     }
 }
