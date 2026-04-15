@@ -1,13 +1,10 @@
 <?php
-/* ============================================================================
- * PayrollCI - Page de configuration du module
- * ============================================================================
- */
+/* PayrollCI v2 - Page de configuration */
 
-require '../../../main.inc.php';
+require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
-dol_include_once('/payrollci/lib/payrollci.lib.php');
 dol_include_once('/payrollci/class/payrollci_calc.class.php');
+dol_include_once('/payrollci/lib/payrollci.lib.php');
 
 $langs->loadLangs(array("admin", "payrollci@payrollci"));
 
@@ -15,122 +12,68 @@ if (!$user->admin) accessforbidden();
 
 $action = GETPOST('action', 'aZ09');
 
-// Sauvegarder les paramètres
 if ($action == 'update') {
-    dolibarr_set_const($db, 'PAYROLLCI_COMPANY_NAME', GETPOST('company_name', 'alpha'), 'chaine', 0, '', $conf->entity);
-    dolibarr_set_const($db, 'PAYROLLCI_COMPANY_ADDRESS', GETPOST('company_address', 'alpha'), 'chaine', 0, '', $conf->entity);
-    dolibarr_set_const($db, 'PAYROLLCI_COMPANY_CNPS', GETPOST('company_cnps', 'alpha'), 'chaine', 0, '', $conf->entity);
-    dolibarr_set_const($db, 'PAYROLLCI_COMPANY_CC', GETPOST('company_cc', 'alpha'), 'chaine', 0, '', $conf->entity);
-    dolibarr_set_const($db, 'PAYROLLCI_DEFAULT_SECTEUR', GETPOST('default_secteur', 'alpha'), 'chaine', 0, '', $conf->entity);
-
-    setEventMessages('Configuration enregistrée', null, 'mesgs');
+    dolibarr_set_const($db, 'PAYROLLCI_DEFAULT_SECTEUR', GETPOST('secteur', 'alpha'));
+    dolibarr_set_const($db, 'PAYROLLCI_DEFAULT_VILLE', GETPOST('ville', 'alpha'));
+    dolibarr_set_const($db, 'PAYROLLCI_COMPANY_CNPS', GETPOST('company_cnps', 'alpha'));
+    setEventMessages('Configuration sauvegardée', null, 'mesgs');
 }
 
-// Affichage
 llxHeader('', 'Configuration PayrollCI');
-
-$head = payrollciAdminPrepareHead();
-print dol_get_fiche_head($head, 'settings', 'PayrollCI', -1, 'payrollci@payrollci');
+print load_fiche_titre('Configuration du module PayrollCI v2', '', 'payrollci@payrollci');
 
 print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="action" value="update">';
 
-// === Entreprise ===
-print load_fiche_titre('Informations Entreprise', '', '');
-
 print '<table class="noborder centpercent">';
-print '<tr class="liste_titre">';
-print '<td>Paramètre</td>';
-print '<td>Valeur</td>';
-print '</tr>';
+print '<tr class="liste_titre"><td colspan="2"><b>Paramètres par défaut</b></td></tr>';
 
-print '<tr class="oddeven">';
-print '<td>Raison sociale</td>';
-print '<td><input type="text" name="company_name" value="'.dol_escape_htmltag($conf->global->PAYROLLCI_COMPANY_NAME).'" size="60"></td>';
-print '</tr>';
-
-print '<tr class="oddeven">';
-print '<td>Adresse</td>';
-print '<td><input type="text" name="company_address" value="'.dol_escape_htmltag($conf->global->PAYROLLCI_COMPANY_ADDRESS).'" size="60"></td>';
-print '</tr>';
-
-print '<tr class="oddeven">';
-print '<td>N° CNPS Employeur</td>';
-print '<td><input type="text" name="company_cnps" value="'.dol_escape_htmltag($conf->global->PAYROLLCI_COMPANY_CNPS).'" size="30"></td>';
-print '</tr>';
-
-print '<tr class="oddeven">';
-print '<td>N° RCCM</td>';
-print '<td><input type="text" name="company_cc" value="'.dol_escape_htmltag($conf->global->PAYROLLCI_COMPANY_CC).'" size="30"></td>';
-print '</tr>';
-
+// Secteur
 $secteurs = PayrollCICalc::getSecteursActivite();
-print '<tr class="oddeven">';
-print '<td>Secteur d\'activité par défaut</td>';
-print '<td><select name="default_secteur">';
-foreach ($secteurs as $key => $sect) {
-    $selected = ($conf->global->PAYROLLCI_DEFAULT_SECTEUR == $key) ? ' selected' : '';
-    print '<option value="'.$key.'"'.$selected.'>'.$sect['label'].' (AT: '.$sect['taux'].'%)</option>';
+$defSec = $conf->global->PAYROLLCI_DEFAULT_SECTEUR ?? 'commerce';
+print '<tr class="oddeven"><td>Secteur d\'activité par défaut</td><td>';
+print '<select name="secteur" class="flat">';
+foreach ($secteurs as $k => $s) {
+    $sel = ($k == $defSec) ? ' selected' : '';
+    print '<option value="'.$k.'"'.$sel.'>'.$s['label'].' (AT: '.$s['taux'].'%)</option>';
 }
-print '</select></td>';
-print '</tr>';
+print '</select></td></tr>';
+
+// Ville
+$villes = PayrollCICalc::getVilles();
+$defVille = $conf->global->PAYROLLCI_DEFAULT_VILLE ?? 'abidjan';
+print '<tr class="oddeven"><td>Ville par défaut (transport exonéré)</td><td>';
+print '<select name="ville" class="flat">';
+foreach ($villes as $k => $v) {
+    $sel = ($k == $defVille) ? ' selected' : '';
+    print '<option value="'.$k.'"'.$sel.'>'.$v['label'].' ('.number_format($v['plafond'], 0, ',', ' ').' F/mois)</option>';
+}
+print '</select></td></tr>';
+
+// CNPS entreprise
+print '<tr class="oddeven"><td>N° CNPS de l\'entreprise</td><td>';
+print '<input type="text" name="company_cnps" value="'.($conf->global->PAYROLLCI_COMPANY_CNPS ?? '').'" size="30" class="flat">';
+print '</td></tr>';
 
 print '</table>';
 
-// === Taux en vigueur (informatif) ===
+// ── Barèmes de référence ──
 print '<br>';
-print load_fiche_titre('Taux en vigueur - Côte d\'Ivoire 2026 (informatifs)', '', '');
-
 print '<table class="noborder centpercent">';
-print '<tr class="liste_titre">';
-print '<td>Cotisation / Impôt</td>';
-print '<td>Taux / Formule</td>';
-print '<td>Plafond</td>';
-print '</tr>';
-
-print '<tr class="oddeven"><td><b>CNPS - Retraite</b></td>';
-print '<td>14% (6,3% salarié + 7,7% employeur)</td>';
-print '<td>'.number_format(PayrollCICalc::CNPS_PLAFOND_RETRAITE, 0, ',', ' ').' FCFA/mois</td></tr>';
-
-print '<tr class="oddeven"><td><b>CNPS - Prestations familiales</b></td>';
-print '<td>5,75% employeur (dont 0,75% maternité)</td>';
-print '<td>'.number_format(PayrollCICalc::CNPS_PLAFOND_PF, 0, ',', ' ').' FCFA/mois</td></tr>';
-
-print '<tr class="oddeven"><td><b>CNPS - Accidents du travail</b></td>';
-print '<td>2% à 5% employeur (selon secteur)</td>';
-print '<td>'.number_format(PayrollCICalc::CNPS_PLAFOND_PF, 0, ',', ' ').' FCFA/mois</td></tr>';
-
-print '<tr class="oddeven"><td><b>CMU</b></td>';
-print '<td>500 FCFA/mois salarié + 500 FCFA/mois employeur</td>';
-print '<td>Forfait</td></tr>';
-
-print '<tr class="oddeven"><td><b>IS (Impôt sur Salaires)</b></td>';
-print '<td>1,5% sur 80% du salaire brut</td>';
-print '<td>-</td></tr>';
-
-print '<tr class="oddeven"><td><b>CN (Contribution Nationale)</b></td>';
-print '<td>0-50K: 0% / 50-130K: 1,5% / 130-200K: 5% / >200K: 10%</td>';
-print '<td>Sur 80% du brut</td></tr>';
-
-print '<tr class="oddeven"><td><b>IGR (Impôt Général sur le Revenu)</b></td>';
-print '<td>Barème progressif 8 tranches (0% à 60%) avec quotient familial</td>';
-print '<td>1 à 5 parts</td></tr>';
-
-print '<tr class="oddeven"><td><b>SMIG</b></td>';
-print '<td>'.number_format(PayrollCICalc::SMIG, 0, ',', ' ').' FCFA/mois (40h/semaine)</td>';
-print '<td>Depuis 01/01/2023</td></tr>';
-
+print '<tr class="liste_titre"><td colspan="3"><b>Barèmes en vigueur (2026 - lecture seule)</b></td></tr>';
+print '<tr class="oddeven"><td>CNPS Retraite</td><td>14% (6,3% salarié + 7,7% employeur)</td><td>Plafond: '.number_format(PayrollCICalc::CNPS_PLAFOND_RETRAITE, 0, ',', ' ').' F</td></tr>';
+print '<tr class="oddeven"><td>CNPS PF + Maternité</td><td>5,75% employeur</td><td>Plafond: '.number_format(PayrollCICalc::CNPS_PLAFOND_PF, 0, ',', ' ').' F</td></tr>';
+print '<tr class="oddeven"><td>CMU</td><td>500 F/mois chacun</td><td></td></tr>';
+print '<tr class="oddeven"><td>Impôt Employeur (IE)</td><td>1,2% du brut imposable</td><td></td></tr>';
+print '<tr class="oddeven"><td>FDFP/TA</td><td>0,4% masse salariale</td><td></td></tr>';
+print '<tr class="oddeven"><td>FDFP/FPC</td><td>0,6% masse salariale</td><td></td></tr>';
+print '<tr class="oddeven"><td>Transport exonéré</td><td>Abidjan: 30 000 F | Bouaké: 24 000 F | Autres: 20 000 F</td><td></td></tr>';
+print '<tr class="oddeven"><td>Prime d\'ancienneté</td><td>2% après 24 mois, +1%/an, max 25%</td><td>Sur salaire catégoriel</td></tr>';
+print '<tr class="oddeven"><td>Heures supplémentaires</td><td>15% (41è-46è h) | 50% (>46h) | 75% (nuit/dim) | 100% (nuit+dim)</td><td></td></tr>';
 print '</table>';
 
-print '<br>';
-print '<div class="center">';
-print '<input type="submit" class="button" value="Enregistrer">';
-print '</div>';
-
+print '<br><div class="center"><input type="submit" class="button" value="Sauvegarder"></div>';
 print '</form>';
 
-print dol_get_fiche_end();
-
 llxFooter();
-$db->close();
