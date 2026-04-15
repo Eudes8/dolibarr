@@ -1,6 +1,6 @@
 <?php
 /* ============================================================================
- * PayrollCI v3 - Module descriptor - Intégration complète Dolibarr
+ * PayrollCI v4 - Module descriptor
  * ============================================================================ */
 
 include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
@@ -11,102 +11,60 @@ class modPayrollCI extends DolibarrModules
     {
         global $langs, $conf;
         $this->db = $db;
-        $this->numero = 500000;
+
+        $this->numero = 500100;
         $this->rights_class = 'payrollci';
         $this->family = "hr";
         $this->module_position = '90';
         $this->name = preg_replace('/^mod/i', '', get_class($this));
-        $this->description = "Gestion complète de la paie - Droit ivoirien 2026 (v3)";
-        $this->descriptionlong = "Module de paie 100% intégré à Dolibarr, conforme au droit du travail de Côte d'Ivoire. Inclut tous les éléments CCI, charges CNPS, ITS, charges fiscales patronales (IE, FDFP), avantages en nature, heures supplémentaires, transport exonéré, ancienneté auto. Onglet paie sur les fiches utilisateurs/employés.";
+        $this->description = "Module de paie Côte d'Ivoire - Réforme ITS 2024 (IBS/RICF)";
+        $this->descriptionlong = "Gestion de la paie conforme au droit ivoirien. Calcul CNPS, ITS (IBS+RICF), charges patronales, génération PDF style Sage, états réglementaires.";
         $this->editor_name = 'PayrollCI';
-        $this->version = '3.0.0';
+        $this->version = '4.0.0';
         $this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
         $this->picto = 'payrollci@payrollci';
-
-        // Module parts
-        $this->module_parts = array(
-            'triggers' => 1,
-            'login'    => 0,
-            'substitutions' => 0,
-            'menus'    => 0,
-            'tpl'      => 0,
-            'barcode'  => 0,
-            'models'   => 1,
-            'theme'    => 0,
-            'css'      => array(),
-            'hooks'    => array(
-                'data' => array('usercard', 'globalcard'),
-                'entity' => '0',
-            ),
-            'moduleforexternal' => 0,
-        );
+        $this->module_parts = array('triggers' => 1, 'hooks' => array('usercard'));
 
         $this->dirs = array('/payrollci/temp', '/payrollci/bulletins');
         $this->config_page_url = array("setup.php@payrollci");
 
-        // Onglet "Bulletins de paie" sur les fiches utilisateurs
-        $this->tabs = array(
-            'user:+payrollci:BulletinsDePaie:payrollci@payrollci:$conf->payrollci->enabled:/payrollci/tab_user.php?fk_user=__ID__',
-        );
-
-        // Dictionnaires
-        $this->dictionaries = array();
-
-        // Boxes / Widgets
-        $this->boxes = array(
-            0 => array(
-                'file'    => 'box_payrollci_last@payrollci',
-                'note'    => 'Derniers bulletins de paie',
-                'enabledbydefaulton' => 'Home',
-            ),
-        );
-
-        // Cron jobs
-        $this->cronjobs = array();
-
-        // Constantes
-        $this->const = array(
-            0 => array('PAYROLLCI_DEFAULT_SECTEUR', 'chaine', 'commerce', 'Secteur par défaut', 0, 'current', 1),
-            1 => array('PAYROLLCI_DEFAULT_VILLE', 'chaine', 'abidjan', 'Ville par défaut', 0, 'current', 1),
-        );
+        $this->depends = array();
+        $this->requiredby = array();
+        $this->conflictwith = array();
 
         // Permissions
-        $this->rights = array();
         $r = 0;
-        $this->rights[$r][0] = 500001;
+        $this->rights[$r][0] = 500101;
         $this->rights[$r][1] = 'Lire les bulletins de paie';
         $this->rights[$r][3] = 0;
         $this->rights[$r][4] = 'lire';
-        $this->rights[$r][5] = '';
         $r++;
-        $this->rights[$r][0] = 500002;
+        $this->rights[$r][0] = 500102;
         $this->rights[$r][1] = 'Créer/modifier les bulletins';
         $this->rights[$r][3] = 0;
         $this->rights[$r][4] = 'creer';
-        $this->rights[$r][5] = '';
         $r++;
-        $this->rights[$r][0] = 500003;
+        $this->rights[$r][0] = 500103;
+        $this->rights[$r][1] = 'Valider les bulletins';
+        $this->rights[$r][3] = 0;
+        $this->rights[$r][4] = 'valider';
+        $r++;
+        $this->rights[$r][0] = 500104;
         $this->rights[$r][1] = 'Supprimer les bulletins';
         $this->rights[$r][3] = 0;
         $this->rights[$r][4] = 'supprimer';
-        $this->rights[$r][5] = '';
         $r++;
-        $this->rights[$r][0] = 500004;
-        $this->rights[$r][1] = 'Exporter les bulletins';
-        $this->rights[$r][3] = 0;
-        $this->rights[$r][4] = 'export';
-        $this->rights[$r][5] = '';
 
         // Menus
         $this->menu = array();
         $r = 0;
 
-        // Menu principal dans HRM
+        // Top menu under HRM
         $this->menu[$r] = array(
             'fk_menu'  => 'fk_mainmenu=hrm',
             'type'     => 'left',
             'titre'    => 'Paie CI',
-            'prefix'   => img_picto('', 'payrollci@payrollci', 'class="paddingright"'),
+            'prefix'   => img_picto('', 'payrollci@payrollci', 'class="pictofixedwidth"'),
             'mainmenu' => 'hrm',
             'leftmenu' => 'payrollci',
             'url'      => '/payrollci/list.php',
@@ -119,11 +77,11 @@ class modPayrollCI extends DolibarrModules
         );
         $r++;
 
-        // Sous-menu : Nouveau bulletin
         $this->menu[$r] = array(
             'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
             'type'     => 'left',
             'titre'    => 'Nouveau bulletin',
+            'prefix'   => img_picto('', 'add', 'class="pictofixedwidth"'),
             'mainmenu' => 'hrm',
             'leftmenu' => 'payrollci_new',
             'url'      => '/payrollci/card.php?action=create',
@@ -131,14 +89,16 @@ class modPayrollCI extends DolibarrModules
             'position' => 101,
             'enabled'  => '$conf->payrollci->enabled',
             'perms'    => '$user->rights->payrollci->creer',
+            'target'   => '',
+            'user'     => 0,
         );
         $r++;
 
-        // Sous-menu : Liste des bulletins
         $this->menu[$r] = array(
             'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
             'type'     => 'left',
             'titre'    => 'Liste des bulletins',
+            'prefix'   => img_picto('', 'list', 'class="pictofixedwidth"'),
             'mainmenu' => 'hrm',
             'leftmenu' => 'payrollci_list',
             'url'      => '/payrollci/list.php',
@@ -146,14 +106,16 @@ class modPayrollCI extends DolibarrModules
             'position' => 102,
             'enabled'  => '$conf->payrollci->enabled',
             'perms'    => '$user->rights->payrollci->lire',
+            'target'   => '',
+            'user'     => 0,
         );
         $r++;
 
-        // Sous-menu : Tableau de bord
         $this->menu[$r] = array(
             'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
             'type'     => 'left',
             'titre'    => 'Tableau de bord',
+            'prefix'   => img_picto('', 'chart', 'class="pictofixedwidth"'),
             'mainmenu' => 'hrm',
             'leftmenu' => 'payrollci_dashboard',
             'url'      => '/payrollci/dashboard.php',
@@ -161,21 +123,66 @@ class modPayrollCI extends DolibarrModules
             'position' => 103,
             'enabled'  => '$conf->payrollci->enabled',
             'perms'    => '$user->rights->payrollci->lire',
+            'target'   => '',
+            'user'     => 0,
         );
         $r++;
 
-        // Sous-menu : Configuration (admin seulement)
+        // Reports submenu
         $this->menu[$r] = array(
             'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
             'type'     => 'left',
-            'titre'    => 'Configuration',
+            'titre'    => 'Livre de paie',
+            'prefix'   => img_picto('', 'list', 'class="pictofixedwidth"'),
             'mainmenu' => 'hrm',
-            'leftmenu' => 'payrollci_setup',
-            'url'      => '/payrollci/admin/setup.php',
+            'leftmenu' => 'payrollci_livrepaie',
+            'url'      => '/payrollci/report_livrepaie.php',
             'langs'    => 'payrollci@payrollci',
             'position' => 110,
             'enabled'  => '$conf->payrollci->enabled',
-            'perms'    => '$user->admin',
+            'perms'    => '$user->rights->payrollci->lire',
+            'target'   => '',
+            'user'     => 0,
+        );
+        $r++;
+
+        $this->menu[$r] = array(
+            'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
+            'type'     => 'left',
+            'titre'    => 'État 301',
+            'prefix'   => img_picto('', 'tax', 'class="pictofixedwidth"'),
+            'mainmenu' => 'hrm',
+            'leftmenu' => 'payrollci_etat301',
+            'url'      => '/payrollci/report_etat301.php',
+            'langs'    => 'payrollci@payrollci',
+            'position' => 111,
+            'enabled'  => '$conf->payrollci->enabled',
+            'perms'    => '$user->rights->payrollci->lire',
+            'target'   => '',
+            'user'     => 0,
+        );
+        $r++;
+
+        $this->menu[$r] = array(
+            'fk_menu'  => 'fk_mainmenu=hrm,fk_leftmenu=payrollci',
+            'type'     => 'left',
+            'titre'    => 'Journal de paie',
+            'prefix'   => img_picto('', 'accountancy', 'class="pictofixedwidth"'),
+            'mainmenu' => 'hrm',
+            'leftmenu' => 'payrollci_journal',
+            'url'      => '/payrollci/report_journal.php',
+            'langs'    => 'payrollci@payrollci',
+            'position' => 112,
+            'enabled'  => '$conf->payrollci->enabled',
+            'perms'    => '$user->rights->payrollci->lire',
+            'target'   => '',
+            'user'     => 0,
+        );
+        $r++;
+
+        // Tabs
+        $this->tabs = array(
+            'user:+payrollci:Bulletins de paie:payrollci@payrollci:$conf->payrollci->enabled:/payrollci/tab_user.php?fk_user=__ID__',
         );
     }
 
