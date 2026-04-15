@@ -1,6 +1,6 @@
 <?php
 /* ============================================================================
- * PayrollCI v2 - Générateur PDF de bulletin de paie
+ * PayrollCI v3 - Générateur PDF de bulletin de paie
  * Format conforme Art. 46.2 CCI de Côte d'Ivoire
  *
  * Mentions obligatoires : employeur, salarié, période, salaire, cotisations,
@@ -37,17 +37,23 @@ class pdf_bulletinpaie
     /**
      * Écrire le PDF
      */
-    public function write_file($object)
+    public function write_file($object, $outputlangs = null, $srctemplatepath = '', $hidedetails = 0, $hidedesc = 0, $hideref = 0)
     {
         global $conf, $mysoc;
 
-        $dir = $conf->payrollci->dir_output.'/bulletins';
+        // V3: stocker dans un sous-répertoire par référence (standard Dolibarr)
+        $dir = $conf->payrollci->dir_output.'/bulletins/'.dol_sanitizeFileName($object->ref);
         if (!is_dir($dir)) dol_mkdir($dir);
         $file = $dir.'/'.$object->ref.'.pdf';
 
+        // Aussi garder dans le répertoire parent pour compatibilité V2
+        $dirParent = $conf->payrollci->dir_output.'/bulletins';
+        if (!is_dir($dirParent)) dol_mkdir($dirParent);
+        $fileParent = $dirParent.'/'.$object->ref.'.pdf';
+
         $pdf = pdf_getInstance('', 'mm', 'A4');
         $pdf->SetAutoPageBreak(1, $this->marge_basse);
-        $pdf->SetCreator("PayrollCI v2 Dolibarr");
+        $pdf->SetCreator("PayrollCI v3 Dolibarr");
         $pdf->SetTitle('Bulletin de Paie '.$object->ref);
 
         $pdf->Open();
@@ -277,12 +283,18 @@ class pdf_bulletinpaie
         $pdf->SetFont('', '', 6);
         $pdf->SetTextColor(120, 120, 120);
         $pdf->Cell($w/2, 3, 'Calculé selon le droit ivoirien 2026 (CGI, CCI, CNPS, FDFP)', 0, 0, 'L');
-        $pdf->Cell($w/2, 3, 'Généré par PayrollCI v2 - Dolibarr', 0, 0, 'R');
+        $pdf->Cell($w/2, 3, 'Généré par PayrollCI v3 - Dolibarr', 0, 0, 'R');
 
         $pdf->Close();
         $pdf->Output($file, 'F');
         if (!empty($conf->global->MAIN_UMASK)) @chmod($file, octdec($conf->global->MAIN_UMASK));
 
+        // Copie de compatibilité V2
+        if (isset($fileParent) && $fileParent != $file) {
+            @copy($file, $fileParent);
+        }
+
+        $this->result = array('fullpath' => $file);
         return 1;
     }
 }
