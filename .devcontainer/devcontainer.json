@@ -1,0 +1,38 @@
+{
+  "name": "PayrollCI - Dolibarr Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dolibarr",
+  "workspaceFolder": "/var/www/html/custom/payrollci",
+  "forwardPorts": [8080, 8081, 3306],
+  "portsAttributes": {
+    "8080": {
+      "label": "Dolibarr",
+      "onAutoForward": "openBrowser"
+    },
+    "8081": {
+      "label": "phpMyAdmin",
+      "onAutoForward": "silent"
+    },
+    "3306": {
+      "label": "MariaDB",
+      "onAutoForward": "silent"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "neilbrayfield.php-docblocker",
+        "DEVSENSE.phptools-vscode"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "editor.tabSize": 4,
+        "files.encoding": "utf8"
+      }
+    }
+  },
+  "postCreateCommand": "echo '✅ PayrollCI dev environment ready!' && echo '🌐 Dolibarr: http://localhost:8080 (admin/admin)' && echo '🗄️ phpMyAdmin: http://localhost:8081' && echo '📁 Module: /var/www/html/custom/payrollci'",
+  "remoteUser": "www-data"
+}
