@@ -1,6 +1,7 @@
 <?php
 /* ============================================================================
- * PayrollCI v3 - Classe métier Bulletin de Paie (intégration Dolibarr)
+ * PayrollCI v4 - Classe métier Bulletin de Paie (intégration Dolibarr)
+ * Réforme ITS 2024 : IBS + RICF / Date d'embauche / Expatrié
  * CRUD complet, extrafields, notes, documents, événements, objets liés
  * ============================================================================ */
 
@@ -29,8 +30,10 @@ class Payslip extends CommonObject
     public $numero_cnps;
     public $numero_cmu;
     public $matricule;
+    public $is_expatrie = 0;
 
-    // Période
+    // Dates
+    public $date_embauche;
     public $date_start;
     public $date_end;
     public $date_creation;
@@ -99,15 +102,14 @@ class Payslip extends CommonObject
     public $cnps_at_pat = 0;
     public $cmu_pat = 0;
 
-    // Charges fiscales patronales
-    public $impot_employeur = 0;
+    // Charges fiscales patronales (V4: contribution employeur remplace IE)
+    public $contribution_employeur = 0;
     public $fdfp_ta = 0;
     public $fdfp_fpc = 0;
 
-    // ITS
-    public $its_is = 0;
-    public $its_cn = 0;
-    public $its_igr = 0;
+    // ITS nouveau régime (V4: IBS + RICF)
+    public $its_ibs = 0;
+    public $its_ricf = 0;
     public $its_total = 0;
 
     // Totaux
@@ -133,6 +135,11 @@ class Payslip extends CommonObject
     public $ville = 'abidjan';
     public $anciennete_mois = 0;
 
+    // Liens Dolibarr
+    public $fk_soc;
+    public $fk_project;
+    public $fk_contrat;
+
     // Notes
     public $note_private;
     public $note_public;
@@ -141,7 +148,7 @@ class Payslip extends CommonObject
     public $status = 0;
 
     /**
-     * Liste de tous les champs numériques (pour boucles INSERT/UPDATE/FETCH)
+     * Tous les champs numériques (pour boucles INSERT/UPDATE/FETCH)
      */
     private static $allNumericFields = [
         'salaire_base', 'sursalaire',
@@ -159,8 +166,8 @@ class Payslip extends CommonObject
         'salaire_brut', 'brut_imposable',
         'cnps_retraite_sal', 'cmu_sal',
         'cnps_retraite_pat', 'cnps_pf_pat', 'cnps_at_pat', 'cmu_pat',
-        'impot_employeur', 'fdfp_ta', 'fdfp_fpc',
-        'its_is', 'its_cn', 'its_igr', 'its_total',
+        'contribution_employeur', 'fdfp_ta', 'fdfp_fpc',
+        'its_ibs', 'its_ricf', 'its_total',
         'total_retenues_sal', 'total_charges_sociales', 'total_charges_fiscales',
         'total_charges_pat', 'salaire_net_imposable', 'salaire_net',
         'avance_salaire', 'pret_deduction', 'pension_alimentaire',
@@ -195,14 +202,13 @@ class Payslip extends CommonObject
     public function create($user, $notrigger = 0)
     {
         global $conf;
-
         $error = 0;
         $this->ref = $this->getNextNumRef();
 
         $fields = [
             'ref', 'entity', 'fk_user', 'employee_name', 'employee_job',
             'employee_category', 'employee_echelon', 'numero_cnps', 'numero_cmu', 'matricule',
-            'date_start', 'date_end', 'date_creation',
+            'is_expatrie', 'date_start', 'date_end', 'date_creation',
             'situation_familiale', 'nombre_enfants', 'nombre_parts',
             'note_public', 'note_private',
         ];
@@ -217,6 +223,7 @@ class Payslip extends CommonObject
             "'".$this->db->escape($this->numero_cnps)."'",
             "'".$this->db->escape($this->numero_cmu)."'",
             "'".$this->db->escape($this->matricule)."'",
+            ((int) $this->is_expatrie),
             "'".$this->db->idate($this->date_start)."'",
             "'".$this->db->idate($this->date_end)."'",
             "'".$this->db->idate(dol_now())."'",
@@ -227,6 +234,12 @@ class Payslip extends CommonObject
             "'".$this->db->escape($this->note_private)."'",
         ];
 
+        // Date d'embauche
+        if (!empty($this->date_embauche)) {
+            $fields[] = 'date_embauche';
+            $values[] = "'".$this->db->idate($this->date_embauche)."'";
+        }
+
         foreach (self::$allNumericFields as $f) {
             $fields[] = $f;
             $values[] = ((float) ($this->$f ?? 0));
@@ -236,10 +249,18 @@ class Payslip extends CommonObject
             $fields[] = $f;
             $values[] = "'".$this->db->escape($this->$f)."'";
         }
-        $fields[] = 'taux_at';     $values[] = ((float) $this->taux_at);
+        $fields[] = 'taux_at';        $values[] = ((float) $this->taux_at);
         $fields[] = 'anciennete_mois'; $values[] = ((int) $this->anciennete_mois);
-        $fields[] = 'status';      $values[] = ((int) $this->status);
-        $fields[] = 'fk_user_creat'; $values[] = ((int) $user->id);
+        $fields[] = 'status';          $values[] = ((int) $this->status);
+        $fields[] = 'fk_user_creat';   $values[] = ((int) $user->id);
+
+        // Liens optionnels
+        foreach (['fk_soc', 'fk_project', 'fk_contrat'] as $link) {
+            if (!empty($this->$link)) {
+                $fields[] = $link;
+                $values[] = ((int) $this->$link);
+            }
+        }
 
         $sql = "INSERT INTO ".MAIN_DB_PREFIX.$this->table_element." (".implode(', ', $fields).")";
         $sql .= " VALUES (".implode(', ', $values).")";
@@ -248,26 +269,10 @@ class Payslip extends CommonObject
         $resql = $this->db->query($sql);
         if ($resql) {
             $this->id = $this->db->last_insert_id(MAIN_DB_PREFIX.$this->table_element);
-
-            // Extrafields
-            if (!$error) {
-                $result = $this->insertExtraFields();
-                if ($result < 0) $error++;
-            }
-
-            // Trigger
-            if (!$error && !$notrigger) {
-                $result = $this->call_trigger('PAYSLIP_CREATE', $user);
-                if ($result < 0) $error++;
-            }
-
-            if (!$error) {
-                $this->db->commit();
-                return $this->id;
-            } else {
-                $this->db->rollback();
-                return -1;
-            }
+            if (!$error) { $result = $this->insertExtraFields(); if ($result < 0) $error++; }
+            if (!$error && !$notrigger) { $result = $this->call_trigger('PAYSLIP_CREATE', $user); if ($result < 0) $error++; }
+            if (!$error) { $this->db->commit(); return $this->id; }
+            else { $this->db->rollback(); return -1; }
         } else {
             $this->error = $this->db->lasterror();
             $this->db->rollback();
@@ -299,6 +304,8 @@ class Payslip extends CommonObject
                 $this->numero_cnps = $obj->numero_cnps;
                 $this->numero_cmu = $obj->numero_cmu;
                 $this->matricule = $obj->matricule;
+                $this->is_expatrie = $obj->is_expatrie;
+                $this->date_embauche = $this->db->jdate($obj->date_embauche);
                 $this->date_start = $this->db->jdate($obj->date_start);
                 $this->date_end = $this->db->jdate($obj->date_end);
                 $this->date_creation = $this->db->jdate($obj->date_creation);
@@ -317,13 +324,14 @@ class Payslip extends CommonObject
                 $this->taux_at = $obj->taux_at;
                 $this->ville = $obj->ville;
                 $this->anciennete_mois = $obj->anciennete_mois;
+                $this->fk_soc = $obj->fk_soc ?? null;
+                $this->fk_project = $obj->fk_project ?? null;
+                $this->fk_contrat = $obj->fk_contrat ?? null;
                 $this->status = $obj->status;
                 $this->fk_user_creat = $obj->fk_user_creat;
                 $this->fk_user_modif = $obj->fk_user_modif;
 
-                // Extrafields
                 $this->fetch_optionals();
-
                 return 1;
             }
             return 0;
@@ -333,12 +341,11 @@ class Payslip extends CommonObject
     }
 
     /**
-     * Mettre à jour un bulletin (V3)
+     * Mettre à jour un bulletin
      */
     public function update($user, $notrigger = 0)
     {
         $error = 0;
-
         $sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
         $sql .= " fk_user = ".((int) $this->fk_user);
         $sql .= ", employee_name = '".$this->db->escape($this->employee_name)."'";
@@ -348,8 +355,14 @@ class Payslip extends CommonObject
         $sql .= ", numero_cnps = '".$this->db->escape($this->numero_cnps)."'";
         $sql .= ", numero_cmu = '".$this->db->escape($this->numero_cmu)."'";
         $sql .= ", matricule = '".$this->db->escape($this->matricule)."'";
+        $sql .= ", is_expatrie = ".((int) $this->is_expatrie);
         $sql .= ", date_start = '".$this->db->idate($this->date_start)."'";
         $sql .= ", date_end = '".$this->db->idate($this->date_end)."'";
+        if (!empty($this->date_embauche)) {
+            $sql .= ", date_embauche = '".$this->db->idate($this->date_embauche)."'";
+        } else {
+            $sql .= ", date_embauche = NULL";
+        }
         $sql .= ", situation_familiale = '".$this->db->escape($this->situation_familiale)."'";
         $sql .= ", nombre_enfants = ".((int) $this->nombre_enfants);
         $sql .= ", nombre_parts = ".((float) $this->nombre_parts);
@@ -364,26 +377,18 @@ class Payslip extends CommonObject
         $sql .= ", taux_at = ".((float) $this->taux_at);
         $sql .= ", ville = '".$this->db->escape($this->ville)."'";
         $sql .= ", anciennete_mois = ".((int) $this->anciennete_mois);
+        $sql .= ", fk_soc = ".(!empty($this->fk_soc) ? ((int) $this->fk_soc) : "NULL");
+        $sql .= ", fk_project = ".(!empty($this->fk_project) ? ((int) $this->fk_project) : "NULL");
+        $sql .= ", fk_contrat = ".(!empty($this->fk_contrat) ? ((int) $this->fk_contrat) : "NULL");
         $sql .= ", fk_user_modif = ".((int) $user->id);
         $sql .= " WHERE rowid = ".((int) $this->id);
 
         $this->db->begin();
         $resql = $this->db->query($sql);
         if ($resql) {
-            // Extrafields
-            if (!$error) {
-                $result = $this->insertExtraFields();
-                if ($result < 0) $error++;
-            }
-            // Trigger
-            if (!$error && !$notrigger) {
-                $result = $this->call_trigger('PAYSLIP_MODIFY', $user);
-                if ($result < 0) $error++;
-            }
-            if (!$error) {
-                $this->db->commit();
-                return 1;
-            }
+            if (!$error) { $result = $this->insertExtraFields(); if ($result < 0) $error++; }
+            if (!$error && !$notrigger) { $result = $this->call_trigger('PAYSLIP_MODIFY', $user); if ($result < 0) $error++; }
+            if (!$error) { $this->db->commit(); return 1; }
         }
         $this->error = $this->db->lasterror();
         $this->db->rollback();
@@ -397,22 +402,10 @@ class Payslip extends CommonObject
     {
         $error = 0;
         $this->db->begin();
-
-        // Trigger avant suppression
-        if (!$notrigger) {
-            $result = $this->call_trigger('PAYSLIP_DELETE', $user);
-            if ($result < 0) $error++;
-        }
-
+        if (!$notrigger) { $result = $this->call_trigger('PAYSLIP_DELETE', $user); if ($result < 0) $error++; }
         if (!$error) {
-            // Supprimer extrafields
-            $sql = "DELETE FROM ".MAIN_DB_PREFIX.$this->table_element."_extrafields WHERE fk_object = ".((int) $this->id);
-            $this->db->query($sql);
-
-            // Supprimer l'objet
-            $sql = "DELETE FROM ".MAIN_DB_PREFIX.$this->table_element." WHERE rowid = ".((int) $this->id);
-            if ($this->db->query($sql)) {
-                // Supprimer les fichiers PDF
+            $this->db->query("DELETE FROM ".MAIN_DB_PREFIX.$this->table_element."_extrafields WHERE fk_object = ".((int) $this->id));
+            if ($this->db->query("DELETE FROM ".MAIN_DB_PREFIX.$this->table_element." WHERE rowid = ".((int) $this->id))) {
                 $this->deleteDocuments();
                 $this->db->commit();
                 return 1;
@@ -424,7 +417,7 @@ class Payslip extends CommonObject
     }
 
     /**
-     * Lancer le calcul et remplir les champs
+     * Lancer le calcul V4 et remplir les champs
      */
     public function calculate()
     {
@@ -436,6 +429,12 @@ class Payslip extends CommonObject
         $params['nombre_enfants'] = $this->nombre_enfants;
         $params['taux_at'] = $this->taux_at / 100;
         $params['ville'] = $this->ville;
+        $params['is_expatrie'] = $this->is_expatrie;
+
+        // V4: Passer date_embauche pour auto-calcul ancienneté
+        if (!empty($this->date_embauche)) {
+            $params['date_embauche'] = dol_print_date($this->date_embauche, '%Y-%m-%d');
+        }
 
         $result = PayrollCICalc::calculerBulletin($params);
 
@@ -453,26 +452,16 @@ class Payslip extends CommonObject
     {
         $error = 0;
         $this->db->begin();
-
         $sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element;
         $sql .= " SET status = ".self::STATUS_VALIDATED;
         $sql .= ", date_valid = '".$this->db->idate(dol_now())."'";
         $sql .= " WHERE rowid = ".((int) $this->id);
-
         $resql = $this->db->query($sql);
         if ($resql) {
             $this->status = self::STATUS_VALIDATED;
             $this->date_valid = dol_now();
-
-            if (!$notrigger) {
-                $result = $this->call_trigger('PAYSLIP_VALIDATE', $user);
-                if ($result < 0) $error++;
-            }
-
-            if (!$error) {
-                $this->db->commit();
-                return 1;
-            }
+            if (!$notrigger) { $result = $this->call_trigger('PAYSLIP_VALIDATE', $user); if ($result < 0) $error++; }
+            if (!$error) { $this->db->commit(); return 1; }
         }
         $this->error = $this->db->lasterror();
         $this->db->rollback();
@@ -485,11 +474,7 @@ class Payslip extends CommonObject
     public function setDraft($user, $notrigger = 0)
     {
         if ($this->status != self::STATUS_VALIDATED) return 0;
-
-        $sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element;
-        $sql .= " SET status = ".self::STATUS_DRAFT;
-        $sql .= " WHERE rowid = ".((int) $this->id);
-
+        $sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET status = ".self::STATUS_DRAFT." WHERE rowid = ".((int) $this->id);
         if ($this->db->query($sql)) {
             $this->status = self::STATUS_DRAFT;
             if (!$notrigger) $this->call_trigger('PAYSLIP_UNVALIDATE', $user);
@@ -499,20 +484,15 @@ class Payslip extends CommonObject
     }
 
     /**
-     * Générer le document PDF via le système Dolibarr
+     * Générer le document PDF
      */
     public function generateDocument($modele, $outputlangs, $hidedetails = 0, $hidedesc = 0, $hideref = 0)
     {
         global $conf;
-
         $outputlangs->loadLangs(array("payrollci@payrollci"));
         dol_include_once('/payrollci/core/modules/payrollci/doc/pdf_bulletinpaie.modules.php');
-
-        $modelclass = 'pdf_bulletinpaie';
-        $srctemplatepath = '';
-
-        $obj = new $modelclass($this->db);
-        $result = $obj->write_file($this, $outputlangs, $srctemplatepath, $hidedetails, $hidedesc, $hideref);
+        $obj = new pdf_bulletinpaie($this->db);
+        $result = $obj->write_file($this, $outputlangs);
         if ($result > 0) {
             $this->last_main_doc = $obj->result['fullpath'] ?? '';
             return 1;
@@ -521,50 +501,34 @@ class Payslip extends CommonObject
         return -1;
     }
 
-    /**
-     * Supprimer les documents associés
-     */
     public function deleteDocuments()
     {
         global $conf;
         $dir = $conf->payrollci->dir_output.'/bulletins/';
-
-        // PDF direct
         $file = $dir.$this->ref.'.pdf';
         if (file_exists($file)) dol_delete_file($file);
-
-        // Répertoire
         $subdir = $dir.dol_sanitizeFileName($this->ref);
         if (is_dir($subdir)) dol_delete_dir_recursive($subdir);
     }
 
-    /**
-     * Remplir les infos employé depuis llx_user (V3 : intégration)
-     */
     public function fetchUserInfo()
     {
         if (empty($this->fk_user)) return 0;
-
         $userobj = new User($this->db);
         $result = $userobj->fetch($this->fk_user);
         if ($result > 0) {
             $this->employee_name = trim($userobj->firstname.' '.$userobj->lastname);
             if (empty($this->employee_name)) $this->employee_name = $userobj->login;
             $this->employee_job = $userobj->job ?? '';
-            $this->employee_category = $userobj->employee_category ?? '';
-            // fk_user : user Dolibarr → numéro, etc. (extrafields si configurés)
             return 1;
         }
         return -1;
     }
 
-    /**
-     * Référence suivante
-     */
     public function getNextNumRef()
     {
         global $conf;
-        $prefix = $conf->global->PAYROLLCI_REF_PREFIX ?? 'BP';
+        $prefix = getDolGlobalString('PAYROLLCI_REF_PREFIX', 'BP');
         $sql = "SELECT MAX(CAST(SUBSTRING(ref, ".(strlen($prefix) + 2).") AS UNSIGNED)) as maxref";
         $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
         $sql .= " WHERE ref LIKE '".$this->db->escape($prefix)."-%'";
@@ -577,17 +541,10 @@ class Payslip extends CommonObject
         return $prefix.'-000001';
     }
 
-    /**
-     * Libellé du statut
-     */
-    public function getLibStatut($mode = 0)
-    {
-        return self::LibStatut($this->status, $mode);
-    }
+    public function getLibStatut($mode = 0) { return self::LibStatut($this->status, $mode); }
 
     public static function LibStatut($status, $mode = 0)
     {
-        global $langs;
         if ($mode == 0) {
             if ($status == self::STATUS_DRAFT) return '<span class="badge badge-status0">Brouillon</span>';
             if ($status == self::STATUS_VALIDATED) return '<span class="badge badge-status4">Validé</span>';
@@ -598,43 +555,25 @@ class Payslip extends CommonObject
         return 'Inconnu';
     }
 
-    /**
-     * URL cliquable avec ou sans picto
-     */
     public function getNomUrl($withpicto = 0, $notooltip = 0, $maxlen = 0)
     {
-        global $conf, $langs;
-
         $url = dol_buildpath('/payrollci/card.php', 1).'?id='.$this->id;
-        $label = '<u>Bulletin de Paie</u><br>';
-        $label .= '<b>Réf :</b> '.$this->ref.'<br>';
+        $label = '<u>Bulletin de Paie</u><br><b>Réf :</b> '.$this->ref.'<br>';
         if (!empty($this->employee_name)) $label .= '<b>Employé :</b> '.$this->employee_name.'<br>';
         if (!empty($this->net_a_payer)) $label .= '<b>Net à payer :</b> '.payrollci_format_amount($this->net_a_payer).' FCFA';
 
         $linkstart = '<a href="'.$url.'"';
-        if (empty($notooltip)) {
-            $linkstart .= ' title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip"';
-        }
+        if (empty($notooltip)) $linkstart .= ' title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip"';
         $linkstart .= '>';
-        $linkend = '</a>';
-
         $result = $linkstart;
         if ($withpicto) $result .= img_object($label, 'payrollci@payrollci', 'class="paddingright classfortooltip"');
-        $result .= $this->ref;
-        $result .= $linkend;
-
+        $result .= $this->ref.'</a>';
         return $result;
     }
 
-    /**
-     * Informations pour la fiche (affichage standard Dolibarr)
-     */
     public function info($id)
     {
-        $sql = "SELECT date_creation, tms, fk_user_creat, fk_user_modif";
-        $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
-        $sql .= " WHERE rowid = ".((int) $id);
-
+        $sql = "SELECT date_creation, tms, fk_user_creat, fk_user_modif FROM ".MAIN_DB_PREFIX.$this->table_element." WHERE rowid = ".((int) $id);
         $resql = $this->db->query($sql);
         if ($resql) {
             $obj = $this->db->fetch_object($resql);
@@ -647,18 +586,11 @@ class Payslip extends CommonObject
         }
     }
 
-    /**
-     * Retourne le nombre de bulletins pour un utilisateur
-     */
     public function countForUser($fk_user)
     {
-        $sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX.$this->table_element;
-        $sql .= " WHERE fk_user = ".((int) $fk_user);
+        $sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX.$this->table_element." WHERE fk_user = ".((int) $fk_user);
         $resql = $this->db->query($sql);
-        if ($resql) {
-            $obj = $this->db->fetch_object($resql);
-            return $obj->nb;
-        }
+        if ($resql) { $obj = $this->db->fetch_object($resql); return $obj->nb; }
         return 0;
     }
 }
