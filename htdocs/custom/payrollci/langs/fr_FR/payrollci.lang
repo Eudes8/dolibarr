@@ -1,0 +1,101 @@
+# Module PayrollCI - Traductions françaises
+# Gestion de la paie - Droit ivoirien 2026
+
+# Module
+Module500100Name = PayrollCI - Paie Côte d'Ivoire
+Module500100Desc = Gestion de la paie et génération de bulletins de paie conformes au droit ivoirien (2026)
+
+# Menu
+PayrollCI = Paie CI
+PayrollCIMenu = Paie Côte d'Ivoire
+ListeBulletins = Liste des bulletins
+NouveauBulletin = Nouveau bulletin de paie
+
+# Champs
+Employee = Employé
+EmployeeName = Nom de l'employé
+EmployeeJob = Poste / Fonction
+EmployeeCategory = Catégorie
+EmployeeEchelon = Échelon
+NumeroCNPS = N° CNPS
+NumeroCMU = N° CMU / CNAM
+DateStart = Début période
+DateEnd = Fin période
+SituationFamiliale = Situation familiale
+NombreEnfants = Nombre d'enfants
+NombreParts = Nombre de parts
+
+# Situation familiale
+Celibataire = Célibataire
+Marie = Marié(e)
+Divorce = Divorcé(e)
+Veuf = Veuf / Veuve
+
+# Gains
+SalaireBase = Salaire de base
+PrimeAnciennete = Prime d'ancienneté
+PrimeTransport = Indemnité de transport
+PrimeLogement = Indemnité de logement
+PrimeResponsabilite = Prime de responsabilité
+PrimeSalissure = Prime de salissure
+HeuresSup25 = Heures supplémentaires 25%
+HeuresSup50 = Heures supplémentaires 50%
+AutresPrimes = Autres primes
+CongesPayes = Congés payés
+SalaireBrut = Salaire brut
+
+# CNPS
+CotisationsCNPS = Cotisations CNPS
+RetraiteSalariale = Retraite (part salariale)
+RetraitePatronale = Retraite (part patronale)
+PrestationsFamiliales = Prestations familiales
+AccidentsTravail = Accidents du travail
+CMU = CMU
+
+# ITS
+ITS = ITS (Impôts sur Traitements et Salaires)
+IS = IS (Impôt sur Salaires)
+CN = CN (Contribution Nationale)
+IGR = IGR (Impôt Général sur le Revenu)
+TotalITS = Total ITS
+
+# Totaux
+TotalRetenues = Total retenues salariales
+TotalChargesPatronales = Total charges patronales
+SalaireNetImposable = Salaire net imposable
+SalaireNet = Salaire net
+AvanceSalaire = Avance sur salaire
+PretDeduction = Remboursement de prêt
+AutresRetenues = Autres retenues
+NetAPayer = Net à payer
+
+# Secteur
+SecteurActivite = Secteur d'activité
+TauxAT = Taux accident du travail
+
+# Actions
+CreatePayslip = Créer le bulletin
+CalculatePayslip = Calculer la paie
+ValidatePayslip = Valider le bulletin
+GeneratePDF = Générer le PDF
+BackToList = Retour à la liste
+
+# Statuts
+Draft = Brouillon
+Validated = Validé
+
+# Configuration
+PayrollCISetup = Configuration PayrollCI
+CompanyName = Raison sociale
+CompanyAddress = Adresse de l'entreprise
+CompanyCNPS = N° CNPS employeur
+CompanyCC = N° RCCM
+DefaultSecteur = Secteur d'activité par défaut
+
+# Messages
+PayslipCreated = Bulletin de paie créé avec succès
+PayslipValidated = Bulletin validé
+PayslipDeleted = Bulletin supprimé
+PDFGenerated = Bulletin PDF généré
+ConfirmValidate = Êtes-vous sûr de vouloir valider ce bulletin ? Cette action est irréversible.
+ConfirmDelete = Êtes-vous sûr de vouloir supprimer ce bulletin ?
