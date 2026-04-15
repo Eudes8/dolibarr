@@ -105,3 +105,13 @@ alltime
 # other
 blacklists
 confirmactionxxx
+
+# French strings for PayrollCI module (htdocs/custom/payrollci/)
+bord
+projets
+avantages
+complet
+remplace
+syntaxe
+exercice
+fonctions
