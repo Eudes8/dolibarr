@@ -1,21 +1,17 @@
 {
   "name": "PayrollCI - Dolibarr Dev",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "dolibarr",
-  "workspaceFolder": "/var/www/html/custom/payrollci",
-  "forwardPorts": [8080, 8081, 3306],
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.2-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/robbert229/devcontainer-features/mysql-mariadb:1": {
+      "version": "10.11"
+    }
+  },
+  "forwardPorts": [8080],
   "portsAttributes": {
     "8080": {
       "label": "Dolibarr",
       "onAutoForward": "openBrowser"
-    },
-    "8081": {
-      "label": "phpMyAdmin",
-      "onAutoForward": "silent"
-    },
-    "3306": {
-      "label": "MariaDB",
-      "onAutoForward": "silent"
     }
   },
   "customizations": {
@@ -23,8 +19,7 @@
       "extensions": [
         "bmewburn.vscode-intelephense-client",
         "xdebug.php-debug",
-        "neilbrayfield.php-docblocker",
-        "DEVSENSE.phptools-vscode"
+        "neilbrayfield.php-docblocker"
       ],
       "settings": {
         "php.validate.executablePath": "/usr/local/bin/php",
@@ -33,6 +28,6 @@
       }
     }
   },
-  "postCreateCommand": "echo '✅ PayrollCI dev environment ready!' && echo '🌐 Dolibarr: http://localhost:8080 (admin/admin)' && echo '🗄️ phpMyAdmin: http://localhost:8081' && echo '📁 Module: /var/www/html/custom/payrollci'",
-  "remoteUser": "root"
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "remoteUser": "vscode"
 }
